@@ -1,0 +1,1372 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Speak Bot</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+            min-height: 100vh; background: #f2f2f7;
+            -webkit-font-smoothing: antialiased; overflow-x: hidden;
+        }
+        .page { display: none; padding: 20px; min-height: 100vh; }
+        .page.active { display: block; }
+        .page-enter { animation: pageIn 0.35s ease both; }
+        .page-exit { animation: pageOut 0.25s ease both; }
+        @keyframes pageIn { from{opacity:0;transform:translateX(60px)}to{opacity:1;transform:translateX(0)} }
+        @keyframes pageOut { from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(-30px)} }
+        .page-back-enter { animation: pageBackIn 0.35s ease both; }
+        .page-back-exit { animation: pageBackOut 0.25s ease both; }
+        @keyframes pageBackIn { from{opacity:0;transform:translateX(-60px)}to{opacity:1;transform:translateX(0)} }
+        @keyframes pageBackOut { from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(60px)} }
+        @keyframes slideUp { from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)} }
+        @keyframes fadeIn { from{opacity:0}to{opacity:1} }
+
+        /* ===== REGISTER PAGE ===== */
+        .reg-container {
+            max-width: 500px; margin: 0 auto; padding-top: 20px;
+        }
+        .reg-icon { text-align: center; font-size: 64px; margin-bottom: 16px; animation: slideUp 0.5s ease both; }
+        .reg-title {
+            text-align: center; font-size: 28px; font-weight: 700;
+            color: #1c1c1e; margin-bottom: 6px; animation: slideUp 0.5s ease 0.05s both;
+        }
+        .reg-subtitle {
+            text-align: center; font-size: 15px; color: #8e8e93;
+            margin-bottom: 32px; animation: slideUp 0.5s ease 0.1s both;
+        }
+
+        /* Contact card */
+        .contact-card {
+            background: white; border-radius: 16px; padding: 18px 20px;
+            display: flex; align-items: center; gap: 14px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06);
+            cursor: pointer; -webkit-tap-highlight-color: transparent;
+            animation: slideUp 0.5s ease 0.15s both;
+        }
+        .contact-card:active { transform: scale(0.98); opacity: 0.9; }
+        .contact-done { cursor: default; background: #f0fff4; border: 2px solid #34c759; }
+        .contact-done:active { transform: none; opacity: 1; }
+        .contact-icon { font-size: 32px; flex-shrink: 0; }
+        .contact-text { flex: 1; }
+        .contact-title { font-size: 17px; font-weight: 600; color: #1c1c1e; }
+        .contact-desc { font-size: 14px; color: #8e8e93; margin-top: 2px; }
+        .contact-arrow { color: #c7c7cc; font-size: 22px; }
+
+        /* Gender selector */
+        .gender-section { animation: slideUp 0.5s ease 0.2s both; }
+        .gender-section-title {
+            font-size: 13px; font-weight: 600; color: #8e8e93;
+            text-transform: uppercase; letter-spacing: 0.5px;
+            padding: 0 4px; margin-bottom: 10px;
+        }
+        .gender-options { display: flex; gap: 12px; }
+        .gender-btn {
+            flex: 1; padding: 16px; border-radius: 14px; border: 2px solid #e5e5ea;
+            background: white; cursor: pointer; text-align: center;
+            transition: all 0.2s ease; -webkit-tap-highlight-color: transparent;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+        .gender-btn.selected { border-color: #007aff; background: #f0f5ff; }
+        .gender-btn.selected-male { border-color: #007aff; background: #f0f5ff; }
+        .gender-btn.selected-female { border-color: #e91e8c; background: #fff0f8; }
+        .gender-emoji { font-size: 32px; margin-bottom: 6px; }
+        .gender-label { font-size: 15px; font-weight: 600; color: #1c1c1e; }
+
+        /* Continue button */
+        .continue-btn {
+            width: 100%; padding: 16px; border: none; border-radius: 14px;
+            font-size: 17px; font-weight: 600; color: white; cursor: pointer;
+            background: #007aff; margin-top: 24px;
+            transition: all 0.2s ease; animation: slideUp 0.5s ease 0.25s both;
+        }
+        .continue-btn:disabled { background: #c7c7cc; cursor: not-allowed; }
+        .continue-btn:not(:disabled):active { transform: scale(0.98); opacity: 0.9; }
+
+        .form-error {
+            color: #ff3b30; font-size: 13px; margin-top: 8px;
+            padding-left: 4px; display: none;
+        }
+        .form-error.show { display: block; animation: fadeIn 0.2s ease; }
+
+        /* ===== HOME PAGE ===== */
+        .header { text-align: center; padding: 30px 0 24px; }
+        .header h1 { font-size: 28px; font-weight: 700; color: #1c1c1e; }
+        .header p { font-size: 15px; color: #8e8e93; margin-top: 6px; }
+        .cards { display: flex; flex-direction: column; gap: 16px; max-width: 500px; margin: 0 auto; }
+        .card {
+            background: white; border-radius: 16px; padding: 20px;
+            display: flex; align-items: center; gap: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06);
+            cursor: pointer; -webkit-tap-highlight-color: transparent;
+        }
+        .card-icon {
+            width: 56px; height: 56px; border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 28px; flex-shrink: 0;
+        }
+        .card-arabic .card-icon { background: linear-gradient(135deg, #34c759, #30b050); }
+        .card-turkish .card-icon { background: linear-gradient(135deg, #ff3b30, #e8352b); }
+        .card-english .card-icon { background: linear-gradient(135deg, #007aff, #0068db); }
+        .card-content { flex: 1; }
+        .card-title { font-size: 20px; font-weight: 600; color: #1c1c1e; }
+        .card-subtitle { font-size: 14px; color: #8e8e93; margin-top: 3px; }
+        .card-arrow { color: #c7c7cc; font-size: 20px; }
+        .card:nth-child(1) { animation: slideUp 0.5s ease both; }
+        .card:nth-child(2) { animation: slideUp 0.5s ease 0.1s both; }
+        .card:nth-child(3) { animation: slideUp 0.5s ease 0.2s both; }
+
+        /* ===== LEVEL & PROGRESS ===== */
+        .nav-header { display: flex; align-items: center; gap: 12px; padding: 16px 0 24px; }
+        .back-btn {
+            width: 36px; height: 36px; border-radius: 50%; border: none;
+            background: white; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.08); flex-shrink: 0;
+        }
+        .back-btn svg { display: block; }
+        .nav-title { font-size: 24px; font-weight: 700; }
+        .level-subtitle { font-size: 15px; color: #8e8e93; margin-bottom: 20px; padding-left: 48px; }
+        .levels { display: flex; flex-direction: column; gap: 12px; max-width: 500px; margin: 0 auto; }
+        .level-card {
+            background: white; border-radius: 14px; padding: 18px 20px;
+            display: flex; align-items: center; gap: 14px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06);
+            cursor: pointer;
+        }
+        .level-badge {
+            width: 44px; height: 44px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px; font-weight: 700; color: white; flex-shrink: 0;
+        }
+        .level-info { flex: 1; }
+        .level-name { font-size: 17px; font-weight: 600; color: #1c1c1e; }
+        .level-desc { font-size: 13px; color: #8e8e93; margin-top: 2px; }
+        .level-arrow { color: #c7c7cc; font-size: 18px; }
+        .theme-arabic .level-badge{background:linear-gradient(135deg,#34c759,#30b050)} .theme-arabic .nav-title{color:#2d8a45}
+        .theme-turkish .level-badge{background:linear-gradient(135deg,#ff3b30,#e8352b)} .theme-turkish .nav-title{color:#d4342b}
+        .theme-english .level-badge{background:linear-gradient(135deg,#007aff,#0068db)} .theme-english .nav-title{color:#0066cc}
+        .level-card:nth-child(1){animation:slideUp .4s ease .05s both}
+        .level-card:nth-child(2){animation:slideUp .4s ease .1s both}
+        .level-card:nth-child(3){animation:slideUp .4s ease .15s both}
+        .level-card:nth-child(4){animation:slideUp .4s ease .2s both}
+        .level-card:nth-child(5){animation:slideUp .4s ease .25s both}
+        .level-card:nth-child(6){animation:slideUp .4s ease .3s both}
+
+        .progress-page { text-align: center; }
+        .progress-badge-big {
+            width: 72px; height: 72px; border-radius: 18px;
+            display: inline-flex; align-items: center; justify-content: center;
+            font-size: 30px; font-weight: 800; color: white; margin-bottom: 16px;
+        }
+        .progress-level-name { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+        .progress-lang-name { font-size: 16px; color: #8e8e93; margin-bottom: 40px; }
+        .loader-wrap { display: flex; justify-content: center; align-items: center; margin: 30px 0 40px; height: 120px; }
+        .loader-icon { font-size: 60px; animation: floatSpin 3s ease-in-out infinite; }
+        @keyframes floatSpin {
+            0%{transform:translateY(0) rotate(0deg)} 25%{transform:translateY(-12px) rotate(5deg)}
+            50%{transform:translateY(0) rotate(0deg)} 75%{transform:translateY(-8px) rotate(-5deg)}
+            100%{transform:translateY(0) rotate(0deg)}
+        }
+        .loader-dots { display: flex; gap: 10px; align-items: center; }
+        .loader-dot { width: 16px; height: 16px; border-radius: 50%; animation: dotPulse 1.4s ease-in-out infinite; }
+        .loader-dot:nth-child(2){animation-delay:.2s} .loader-dot:nth-child(3){animation-delay:.4s} .loader-dot:nth-child(4){animation-delay:.6s}
+        @keyframes dotPulse { 0%,80%,100%{transform:scale(.6);opacity:.4} 40%{transform:scale(1.2);opacity:1} }
+        .progress-card {
+            background: white; border-radius: 16px; padding: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06);
+            max-width: 400px; margin: 0 auto;
+        }
+        .progress-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+        .progress-text { font-size: 15px; color: #8e8e93; line-height: 1.5; }
+        .theme-arabic .progress-badge-big{background:linear-gradient(135deg,#34c759,#30b050)} .theme-arabic .progress-level-name{color:#2d8a45} .theme-arabic .progress-title{color:#2d8a45} .theme-arabic .loader-dot{background:#34c759}
+        .theme-turkish .progress-badge-big{background:linear-gradient(135deg,#ff3b30,#e8352b)} .theme-turkish .progress-level-name{color:#d4342b} .theme-turkish .progress-title{color:#d4342b} .theme-turkish .loader-dot{background:#ff3b30}
+        .theme-english .progress-badge-big{background:linear-gradient(135deg,#007aff,#0068db)} .theme-english .progress-level-name{color:#0066cc} .theme-english .progress-title{color:#0066cc} .theme-english .loader-dot{background:#007aff}
+
+        /* ===== BOTTOM NAV ===== */
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: white; border-top: 1px solid #e5e5ea;
+            display: flex; justify-content: space-around; align-items: center;
+            padding: 8px 0; padding-bottom: max(8px, env(safe-area-inset-bottom));
+            z-index: 50;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.04);
+        }
+        .nav-tab {
+            display: flex; flex-direction: column; align-items: center; gap: 3px;
+            cursor: pointer; -webkit-tap-highlight-color: transparent;
+            padding: 4px 8px; border: none; background: none;
+            min-width: 56px;
+        }
+        .nav-tab svg { width: 24px; height: 24px; }
+        .nav-tab-label { font-size: 10px; font-weight: 500; color: #8e8e93; }
+        .nav-tab.active svg path, .nav-tab.active svg circle, .nav-tab.active svg rect, .nav-tab.active svg polyline, .nav-tab.active svg line { stroke: #007aff; }
+        .nav-tab.active svg.fill-icon path { fill: #007aff; stroke: none; }
+        .nav-tab.active .nav-tab-label { color: #007aff; font-weight: 600; }
+        .theme-arabic .nav-tab.active svg path, .theme-arabic .nav-tab.active svg circle, .theme-arabic .nav-tab.active svg rect, .theme-arabic .nav-tab.active svg polyline, .theme-arabic .nav-tab.active svg line { stroke: #34c759; }
+        .theme-arabic .nav-tab.active svg.fill-icon path { fill: #34c759; stroke: none; }
+        .theme-arabic .nav-tab.active .nav-tab-label { color: #34c759; }
+        .theme-turkish .nav-tab.active svg path, .theme-turkish .nav-tab.active svg circle, .theme-turkish .nav-tab.active svg rect, .theme-turkish .nav-tab.active svg polyline, .theme-turkish .nav-tab.active svg line { stroke: #ff3b30; }
+        .theme-turkish .nav-tab.active svg.fill-icon path { fill: #ff3b30; stroke: none; }
+        .theme-turkish .nav-tab.active .nav-tab-label { color: #ff3b30; }
+        .theme-english .nav-tab.active svg path, .theme-english .nav-tab.active svg circle, .theme-english .nav-tab.active svg rect, .theme-english .nav-tab.active svg polyline, .theme-english .nav-tab.active svg line { stroke: #007aff; }
+        .theme-english .nav-tab.active svg.fill-icon path { fill: #007aff; stroke: none; }
+        .theme-english .nav-tab.active .nav-tab-label { color: #007aff; }
+
+        /* Tab content */
+        .main-page { padding-bottom: 80px; }
+        .tab-content { display: none; min-height: 60vh; }
+        .tab-content.active { display: block; animation: fadeIn 0.25s ease; }
+        .tab-placeholder {
+            text-align: center; padding: 60px 20px; color: #8e8e93;
+        }
+        .tab-placeholder-icon { font-size: 56px; margin-bottom: 16px; }
+        .tab-placeholder-title { font-size: 22px; font-weight: 700; color: #1c1c1e; margin-bottom: 8px; }
+        .tab-placeholder-text { font-size: 15px; line-height: 1.5; }
+
+        /* ===== TALK PAGE ===== */
+        .talk-section { max-width: 500px; margin: 0 auto; }
+        .talk-section-title {
+            font-size: 13px; font-weight: 600; color: #8e8e93;
+            text-transform: uppercase; letter-spacing: 0.5px;
+            margin-bottom: 10px; padding: 0 4px;
+        }
+        .talk-card {
+            background: white; border-radius: 16px; padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06);
+            margin-bottom: 20px;
+        }
+
+        /* Gender filter */
+        .filter-group { display: flex; gap: 8px; }
+        .filter-btn {
+            flex: 1; padding: 12px 8px; border-radius: 12px;
+            border: 2px solid #e5e5ea; background: white;
+            cursor: pointer; text-align: center; transition: all 0.2s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .filter-btn-emoji { font-size: 24px; margin-bottom: 4px; }
+        .filter-btn-label { font-size: 13px; font-weight: 600; color: #1c1c1e; }
+        .filter-btn.active { border-color: #007aff; background: #f0f5ff; }
+        .theme-arabic .filter-btn.active { border-color: #34c759; background: #f0fff4; }
+        .theme-turkish .filter-btn.active { border-color: #ff3b30; background: #fff5f5; }
+
+        /* Range slider */
+        .range-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+        .range-label { font-size: 15px; font-weight: 600; color: #1c1c1e; }
+        .range-value {
+            font-size: 14px; font-weight: 700; padding: 4px 12px;
+            border-radius: 8px; background: #f2f2f7;
+        }
+        .range-track {
+            position: relative; height: 44px; display: flex; align-items: center;
+            -webkit-tap-highlight-color: transparent; touch-action: none;
+        }
+        .range-bar {
+            width: 100%; height: 6px; border-radius: 3px; background: #e5e5ea;
+            position: relative;
+        }
+        .range-fill {
+            position: absolute; height: 100%; border-radius: 3px;
+            background: #007aff;
+        }
+        .theme-arabic .range-fill { background: #34c759; }
+        .theme-turkish .range-fill { background: #ff3b30; }
+        .range-thumb {
+            position: absolute; top: 50%; width: 28px; height: 28px;
+            border-radius: 50%; background: white; transform: translate(-50%, -50%);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.04);
+            cursor: grab; z-index: 2; transition: box-shadow 0.15s;
+        }
+        .range-thumb:active { box-shadow: 0 2px 12px rgba(0,0,0,0.25), 0 0 0 1px rgba(0,0,0,0.06); cursor: grabbing; }
+        .range-labels {
+            display: flex; justify-content: space-between; margin-top: 6px;
+            padding: 0 2px;
+        }
+        .range-labels span {
+            font-size: 11px; font-weight: 600; color: #c7c7cc; width: 24px; text-align: center;
+        }
+        .range-labels span.in-range { color: #007aff; }
+        .theme-arabic .range-labels span.in-range { color: #34c759; }
+        .theme-turkish .range-labels span.in-range { color: #ff3b30; }
+
+        /* Find button */
+        .find-btn {
+            width: 100%; padding: 16px; border: none; border-radius: 14px;
+            font-size: 17px; font-weight: 600; color: white;
+            background: #007aff; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            transition: all 0.2s; -webkit-tap-highlight-color: transparent;
+        }
+        .find-btn:active { transform: scale(0.98); opacity: 0.9; }
+        .find-btn svg { width: 20px; height: 20px; }
+        .theme-arabic .find-btn { background: #34c759; }
+        .theme-turkish .find-btn { background: #ff3b30; }
+
+        /* ===== SEARCH PAGE ===== */
+        .search-page { text-align: center; padding-top: 80px; }
+        .search-icon-wrap {
+            width: 100px; height: 100px; border-radius: 50%;
+            background: #f2f2f7; margin: 0 auto 28px;
+            display: flex; align-items: center; justify-content: center;
+            animation: searchPulse 2s ease-in-out infinite;
+        }
+        .search-icon-wrap svg { width: 44px; height: 44px; }
+        @keyframes searchPulse {
+            0%,100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0,122,255,0.2); }
+            50% { transform: scale(1.05); box-shadow: 0 0 0 20px rgba(0,122,255,0); }
+        }
+        .theme-arabic .search-icon-wrap { animation-name: searchPulseGreen; }
+        @keyframes searchPulseGreen {
+            0%,100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(52,199,89,0.2); }
+            50% { transform: scale(1.05); box-shadow: 0 0 0 20px rgba(52,199,89,0); }
+        }
+        .theme-turkish .search-icon-wrap { animation-name: searchPulseRed; }
+        @keyframes searchPulseRed {
+            0%,100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,59,48,0.2); }
+            50% { transform: scale(1.05); box-shadow: 0 0 0 20px rgba(255,59,48,0); }
+        }
+        .search-title { font-size: 24px; font-weight: 700; color: #1c1c1e; margin-bottom: 8px; }
+        .search-subtitle { font-size: 15px; color: #8e8e93; line-height: 1.5; }
+        .search-dots { display: flex; gap: 8px; justify-content: center; margin-top: 32px; }
+        .search-dot {
+            width: 10px; height: 10px; border-radius: 50%; background: #007aff;
+            animation: dotPulse 1.4s ease-in-out infinite;
+        }
+        .search-dot:nth-child(2) { animation-delay: 0.2s; }
+        .search-dot:nth-child(3) { animation-delay: 0.4s; }
+        .theme-arabic .search-dot { background: #34c759; }
+        .theme-turkish .search-dot { background: #ff3b30; }
+        .search-cancel-btn {
+            margin-top: 48px; padding: 14px 40px; border-radius: 12px;
+            border: none; background: #f2f2f7; font-size: 16px;
+            font-weight: 600; color: #8e8e93; cursor: pointer;
+        }
+        .search-cancel-btn:active { opacity: 0.7; }
+        .search-back { position: absolute; top: 20px; left: 20px; }
+
+        /* ===== CALL PAGE ===== */
+        .call-page { text-align: center; padding-top: 60px; min-height: 100vh; position: relative; }
+        .call-avatar {
+            width: 100px; height: 100px; border-radius: 50%;
+            background: linear-gradient(135deg, #007aff, #5856d6);
+            margin: 0 auto 20px; display: flex; align-items: center;
+            justify-content: center; font-size: 44px; color: white;
+            box-shadow: 0 4px 20px rgba(0,122,255,0.3);
+        }
+        .theme-arabic .call-avatar { background: linear-gradient(135deg, #34c759, #30b050); box-shadow: 0 4px 20px rgba(52,199,89,0.3); }
+        .theme-turkish .call-avatar { background: linear-gradient(135deg, #ff3b30, #e8352b); box-shadow: 0 4px 20px rgba(255,59,48,0.3); }
+        .call-name { font-size: 24px; font-weight: 700; color: #1c1c1e; margin-bottom: 4px; }
+        .call-level-badge {
+            display: inline-block; padding: 4px 14px; border-radius: 20px;
+            font-size: 13px; font-weight: 700; color: white; background: #007aff;
+        }
+        .theme-arabic .call-level-badge { background: #34c759; }
+        .theme-turkish .call-level-badge { background: #ff3b30; }
+        .call-timer { font-size: 48px; font-weight: 300; color: #1c1c1e; margin: 40px 0; letter-spacing: 2px; }
+        .call-status { font-size: 15px; color: #34c759; font-weight: 600; margin-bottom: 40px; }
+        .call-actions { display: flex; justify-content: center; gap: 40px; margin-top: 40px; }
+        .call-action-btn {
+            width: 64px; height: 64px; border-radius: 50%; border: none;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .call-action-btn:active { transform: scale(0.9); }
+        .call-action-btn svg { width: 28px; height: 28px; }
+        .call-mute { background: #f2f2f7; }
+        .call-mute.active-btn { background: #007aff; }
+        .call-mute.active-btn svg path, .call-mute.active-btn svg line { stroke: white; }
+        .call-speaker { background: #f2f2f7; }
+        .call-speaker.active-btn { background: #34c759; }
+        .call-speaker.active-btn svg path, .call-speaker.active-btn svg line { stroke: white; }
+        .call-end { background: #ff3b30; }
+        .call-end svg path, .call-end svg line { stroke: white; }
+        .call-action-label { font-size: 10px; color: #8e8e93; margin-top: 4px; font-weight: 500; }
+        .call-action-wrap { display: flex; flex-direction: column; align-items: center; }
+        .partner-muted-badge {
+            display: none; font-size: 12px; color: #ff3b30; font-weight: 600;
+            margin-top: 8px; animation: fadeIn 0.3s ease;
+        }
+        .partner-muted-badge.show { display: block; }
+
+        /* ===== CALL HISTORY ===== */
+        .history-section { margin-top: 20px; }
+        .history-title {
+            font-size: 13px; font-weight: 600; color: #8e8e93;
+            text-transform: uppercase; letter-spacing: 0.5px;
+            margin-bottom: 10px; padding: 0 4px;
+        }
+        .history-list { display: flex; flex-direction: column; gap: 1px; background: white; border-radius: 14px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06); }
+        .history-item {
+            display: flex; align-items: center; gap: 12px; padding: 14px 16px;
+            background: white; border-bottom: 1px solid #f2f2f7;
+        }
+        .history-item:last-child { border-bottom: none; }
+        .history-avatar {
+            width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px; font-weight: 700; color: white;
+            background: linear-gradient(135deg, #007aff, #5856d6);
+        }
+        .theme-arabic .history-avatar { background: linear-gradient(135deg, #34c759, #30b050); }
+        .theme-turkish .history-avatar { background: linear-gradient(135deg, #ff3b30, #e8352b); }
+        .history-info { flex: 1; min-width: 0; }
+        .history-name { font-size: 15px; font-weight: 600; color: #1c1c1e; }
+        .history-meta { font-size: 12px; color: #8e8e93; margin-top: 2px; }
+        .history-duration { font-size: 14px; font-weight: 600; color: #8e8e93; flex-shrink: 0; }
+        .history-empty { text-align: center; padding: 20px; color: #c7c7cc; font-size: 14px; }
+        .call-wave {
+            display: flex; align-items: center; justify-content: center;
+            gap: 4px; height: 40px; margin: 20px 0;
+        }
+        .call-wave-bar {
+            width: 4px; border-radius: 2px; background: #007aff;
+            animation: waveAnim 1s ease-in-out infinite;
+        }
+        .theme-arabic .call-wave-bar { background: #34c759; }
+        .theme-turkish .call-wave-bar { background: #ff3b30; }
+        .call-wave-bar:nth-child(1){height:12px;animation-delay:0s}
+        .call-wave-bar:nth-child(2){height:24px;animation-delay:.1s}
+        .call-wave-bar:nth-child(3){height:36px;animation-delay:.2s}
+        .call-wave-bar:nth-child(4){height:24px;animation-delay:.3s}
+        .call-wave-bar:nth-child(5){height:16px;animation-delay:.4s}
+        .call-wave-bar:nth-child(6){height:28px;animation-delay:.5s}
+        .call-wave-bar:nth-child(7){height:12px;animation-delay:.6s}
+        @keyframes waveAnim {
+            0%,100%{transform:scaleY(0.5)} 50%{transform:scaleY(1.3)}
+        }
+    </style>
+</head>
+<body>
+
+    <!-- CONTACT PAGE -->
+    <div class="page active" id="contactPage">
+        <div class="reg-container">
+            <div class="reg-icon">👋</div>
+            <div class="reg-title">Xush kelibsiz!</div>
+            <div class="reg-subtitle">Davom etish uchun kontaktingizni ulashing</div>
+
+            <div class="contact-card" onclick="requestContact()">
+                <div class="contact-icon">📱</div>
+                <div class="contact-text">
+                    <div class="contact-title">Kontaktni ulashish</div>
+                    <div class="contact-desc">Telefon raqamingiz avtomatik olinadi</div>
+                </div>
+                <div class="contact-arrow">›</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- GENDER PAGE -->
+    <div class="page" id="genderPage">
+        <div class="reg-container">
+            <div class="reg-icon">🧑</div>
+            <div class="reg-title">Jinsingizni tanlang</div>
+            <div class="reg-subtitle">Pastdagi tugmalardan birini bosing</div>
+
+            <div class="gender-section">
+                <div class="gender-options">
+                    <div class="gender-btn" id="genderMale" onclick="selectGender('Erkak')">
+                        <div class="gender-emoji">👨</div>
+                        <div class="gender-label">Erkak</div>
+                    </div>
+                    <div class="gender-btn" id="genderFemale" onclick="selectGender('Ayol')">
+                        <div class="gender-emoji">👩</div>
+                        <div class="gender-label">Ayol</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- HOME PAGE -->
+    <div class="page" id="homePage">
+        <div class="header">
+            <h1>Tilni tanlang</h1>
+            <p>O'rganmoqchi bo'lgan tilni tanlang</p>
+        </div>
+        <div class="cards">
+            <div class="card card-arabic" onclick="openLang('arabic')">
+                <div class="card-icon">🕌</div>
+                <div class="card-content">
+                    <div class="card-title">العربية</div>
+                    <div class="card-subtitle">Arab tili</div>
+                </div>
+                <div class="card-arrow">›</div>
+            </div>
+            <div class="card card-turkish" onclick="openLang('turkish')">
+                <div class="card-icon">🇹🇷</div>
+                <div class="card-content">
+                    <div class="card-title">Türkçe</div>
+                    <div class="card-subtitle">Turk tili</div>
+                </div>
+                <div class="card-arrow">›</div>
+            </div>
+            <div class="card card-english" onclick="openLang('english')">
+                <div class="card-icon">🇬🇧</div>
+                <div class="card-content">
+                    <div class="card-title">English</div>
+                    <div class="card-subtitle">Ingliz tili</div>
+                </div>
+                <div class="card-arrow">›</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="page" id="levelPage"><div id="levelContent"></div></div>
+    <div class="page" id="progressPage"><div id="progressContent"></div></div>
+    <div class="page" id="searchPage"><div id="searchContent"></div></div>
+    <div class="page" id="callPage"><div id="callContent"></div></div>
+
+    <script>
+        var tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+
+        var selectedGender = null;
+        var sharedPhone = '';
+        var currentLang = null;
+        var backSvg = '<svg width="10" height="16" viewBox="0 0 10 16" fill="none"><path d="M9 1L2 8L9 15" stroke="#007aff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+        // Har bir til uchun tanlangan darajani saqlash/olish
+        function getSavedLevel(lang) {
+            return localStorage.getItem('speak_level_' + lang);
+        }
+        function saveLevel(lang, badge) {
+            localStorage.setItem('speak_level_' + lang, badge);
+        }
+
+        // Ro'yxatdan o'tganligini tekshirish
+        function checkRegistration() {
+            var userId = tgUser ? tgUser.id : 0;
+            if (!userId) {
+                if (localStorage.getItem('speak_registered')) {
+                    goToHome();
+                }
+                return;
+            }
+            fetch('/api/check/' + userId)
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.registered) {
+                        localStorage.setItem('speak_registered', '1');
+                        if (data.gender) localStorage.setItem('speak_user_gender', data.gender);
+                        goToHome();
+                    }
+                })
+                .catch(function() {
+                    if (localStorage.getItem('speak_registered')) {
+                        goToHome();
+                    }
+                });
+        }
+
+        function goToHome() {
+            document.getElementById('contactPage').classList.remove('active');
+            document.getElementById('genderPage').classList.remove('active');
+            document.getElementById('homePage').classList.add('active');
+        }
+
+        var tgUser = tg.initDataUnsafe && tg.initDataUnsafe.user ? tg.initDataUnsafe.user : null;
+        checkRegistration();
+
+        // Contact ulashish
+        function requestContact() {
+            if (tg.requestContact) {
+                tg.requestContact(function(sent) {
+                    if (sent) {
+                        navigate('contactPage', 'genderPage', true);
+                    }
+                });
+            } else {
+                navigate('contactPage', 'genderPage', true);
+            }
+        }
+
+        // Jins tanlash
+        function selectGender(gender) {
+            selectedGender = gender;
+            document.getElementById('genderMale').className = 'gender-btn';
+            document.getElementById('genderFemale').className = 'gender-btn';
+            if (gender === 'Erkak') {
+                document.getElementById('genderMale').className = 'gender-btn selected-male';
+            } else {
+                document.getElementById('genderFemale').className = 'gender-btn selected-female';
+            }
+
+            var userId = tgUser ? tgUser.id : 0;
+            var firstName = tgUser ? tgUser.first_name || '' : '';
+            var username = tgUser ? tgUser.username || '' : '';
+
+            fetch('/api/register', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    telegram_id: userId,
+                    phone: sharedPhone || 'mini_app',
+                    gender: gender,
+                    first_name: firstName,
+                    username: username
+                })
+            }).catch(function() {});
+
+            localStorage.setItem('speak_registered', '1');
+            localStorage.setItem('speak_user_gender', gender);
+            setTimeout(function() {
+                navigate('genderPage', 'homePage', true);
+            }, 400);
+        }
+
+        var langs = {
+            arabic: {
+                theme: 'theme-arabic', icon: '🕌', langName: 'العربية',
+                chooseLevel: 'اختر المستوى', chooseSub: 'حدد مستواك الحالي',
+                progressTitle: 'قيد التطوير',
+                progressText: 'هذه الصفحة قيد الإعداد. سيتم إضافة الدروس والمحتوى قريباً. ترقبوا!',
+                levels: [
+                    {badge:'A1',name:'المبتدئ',desc:'الحروف والكلمات الأساسية'},
+                    {badge:'A2',name:'الأساسي',desc:'العبارات اليومية'},
+                    {badge:'B1',name:'المتوسط',desc:'المحادثة والنصوص'},
+                    {badge:'B2',name:'فوق المتوسط',desc:'مواضيع معقدة'},
+                    {badge:'C1',name:'المتقدم',desc:'تواصل حر'},
+                    {badge:'C2',name:'الإتقان',desc:'مستوى اللغة الأم'}
+                ]
+            },
+            turkish: {
+                theme: 'theme-turkish', icon: '🇹🇷', langName: 'Türkçe',
+                chooseLevel: 'Seviye Seçin', chooseSub: 'Mevcut seviyenizi belirleyin',
+                progressTitle: 'Geliştirme Aşamasında',
+                progressText: 'Bu sayfa hazırlanmaktadır. Dersler ve içerikler yakında eklenecektir. Takipte kalın!',
+                levels: [
+                    {badge:'A1',name:'Başlangıç',desc:'Selamlama ve sayılar'},
+                    {badge:'A2',name:'Temel',desc:'Basit konuşmalar'},
+                    {badge:'B1',name:'Orta',desc:'Seyahat ve iş konuları'},
+                    {badge:'B2',name:'Orta Üstü',desc:'Fikir ifade etme'},
+                    {badge:'C1',name:'İleri',desc:'Profesyonel iletişim'},
+                    {badge:'C2',name:'Uzman',desc:'Ana dil seviyesi'}
+                ]
+            },
+            english: {
+                theme: 'theme-english', icon: '🇬🇧', langName: 'English',
+                chooseLevel: 'Choose Level', chooseSub: 'Select your current level',
+                progressTitle: 'In Progress',
+                progressText: 'This page is under development. Lessons and content will be added soon. Stay tuned!',
+                levels: [
+                    {badge:'A1',name:'Beginner',desc:'Greetings and basic words'},
+                    {badge:'A2',name:'Elementary',desc:'Simple sentences'},
+                    {badge:'B1',name:'Intermediate',desc:'Everyday conversations'},
+                    {badge:'B2',name:'Upper-Intermediate',desc:'Complex topics'},
+                    {badge:'C1',name:'Advanced',desc:'Professional level'},
+                    {badge:'C2',name:'Proficiency',desc:'Native speaker level'}
+                ]
+            }
+        };
+
+        function navigate(fromId, toId, forward) {
+            var from = document.getElementById(fromId);
+            var to = document.getElementById(toId);
+            var exitCls = forward ? 'page-exit' : 'page-back-exit';
+            var enterCls = forward ? 'page-enter' : 'page-back-enter';
+            from.classList.add(exitCls);
+            setTimeout(function() {
+                from.classList.remove('active'); from.classList.remove(exitCls);
+                to.classList.add('active'); to.classList.add(enterCls);
+                setTimeout(function() { to.classList.remove(enterCls); }, 350);
+            }, 250);
+        }
+
+        function openLang(lang) {
+            currentLang = lang;
+
+            // Agar bu til uchun daraja allaqachon tanlangan bo'lsa — to'g'ridan-to'g'ri asosiy sahifaga
+            var saved = getSavedLevel(lang);
+            if (saved) {
+                var data = langs[lang];
+                // Saqlangan badge bo'yicha level nomini topish
+                var levelName = saved;
+                for (var i = 0; i < data.levels.length; i++) {
+                    if (data.levels[i].badge === saved) {
+                        levelName = data.levels[i].name;
+                        break;
+                    }
+                }
+                showMainPage(lang, saved, levelName);
+                navigate('homePage', 'progressPage', true);
+                return;
+            }
+
+            // Daraja hali tanlanmagan — level tanlash sahifasiga
+            var data = langs[lang];
+            var h = '<div class="' + data.theme + '">';
+            h += '<div class="nav-header"><button class="back-btn" onclick="navigate(\'levelPage\',\'homePage\',false)">' + backSvg + '</button>';
+            h += '<div class="nav-title">' + data.chooseLevel + '</div></div>';
+            h += '<div class="level-subtitle">' + data.chooseSub + '</div><div class="levels">';
+            for (var i = 0; i < data.levels.length; i++) {
+                var l = data.levels[i];
+                h += '<div class="level-card" data-badge="' + l.badge + '" data-name="' + l.name + '" onclick="selectLevel(this.dataset.badge,this.dataset.name)">';
+                h += '<div class="level-badge">' + l.badge + '</div>';
+                h += '<div class="level-info"><div class="level-name">' + l.name + '</div>';
+                h += '<div class="level-desc">' + l.desc + '</div></div>';
+                h += '<div class="level-arrow">›</div></div>';
+            }
+            h += '</div></div>';
+            document.getElementById('levelContent').innerHTML = h;
+            navigate('homePage', 'levelPage', true);
+        }
+
+        function selectLevel(badge, levelName) {
+            // Darajani saqlash
+            saveLevel(currentLang, badge);
+            // Asosiy sahifaga o'tish
+            showMainPage(currentLang, badge, levelName);
+            navigate('levelPage', 'progressPage', true);
+        }
+
+        // Bottom nav tab nomlari har bir tilda
+        var navLabels = {
+            arabic: { talk: 'محادثة', cefr: 'المستوى', premium: 'بريميوم', leaders: 'المتصدرين', profile: 'الملف' },
+            turkish: { talk: 'Konuşma', cefr: 'Seviye', premium: 'Premium', leaders: 'Liderlik', profile: 'Profil' },
+            english: { talk: 'Talk', cefr: 'CEFR', premium: 'Premium', leaders: 'Leaders', profile: 'Profile' }
+        };
+
+        var tabIcons = {
+            talk: '<svg viewBox="0 0 24 24" fill="none" stroke="#8e8e93" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/><path d="M8 9h8"/><path d="M8 13h4"/></svg>',
+            cefr: '<svg viewBox="0 0 24 24" fill="none" stroke="#8e8e93" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/><path d="M8 7h8"/><path d="M8 11h5"/></svg>',
+            premium: '<svg viewBox="0 0 24 24" fill="none" stroke="#8e8e93" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
+            leaders: '<svg viewBox="0 0 24 24" fill="none" stroke="#8e8e93" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H2v12h4V9z"/><path d="M14 4h-4v17h4V4z"/><path d="M22 12h-4v9h4v-9z"/></svg>',
+            profile: '<svg viewBox="0 0 24 24" fill="none" stroke="#8e8e93" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="4"/><path d="M5.5 21a6.5 6.5 0 0113 0"/></svg>'
+        };
+
+        var tabPlaceholders = {
+            arabic: {
+                cefr: { icon: '📖', title: 'المستوى', text: 'اختبر مستواك وفقاً لمعايير CEFR' },
+                premium: { icon: '⭐', title: 'بريميوم', text: 'احصل على ميزات حصرية ومحتوى متقدم' },
+                leaders: { icon: '🏆', title: 'المتصدرين', text: 'تنافس مع المتعلمين الآخرين' },
+                profile: { icon: '👤', title: 'الملف الشخصي', text: 'معلوماتك وإعداداتك' }
+            },
+            turkish: {
+                cefr: { icon: '📖', title: 'Seviye', text: 'CEFR standartlarına göre seviyenizi test edin' },
+                premium: { icon: '⭐', title: 'Premium', text: 'Özel özellikler ve gelişmiş içerik edinin' },
+                leaders: { icon: '🏆', title: 'Liderlik Tablosu', text: 'Diğer öğrencilerle yarışın' },
+                profile: { icon: '👤', title: 'Profil', text: 'Bilgileriniz ve ayarlarınız' }
+            },
+            english: {
+                cefr: { icon: '📖', title: 'CEFR Level', text: 'Test your level according to CEFR standards' },
+                premium: { icon: '⭐', title: 'Premium', text: 'Get exclusive features and advanced content' },
+                leaders: { icon: '🏆', title: 'Leaderboard', text: 'Compete with other learners' },
+                profile: { icon: '👤', title: 'Profile', text: 'Your info and settings' }
+            }
+        };
+
+        // Talk page labels
+        var talkLabels = {
+            arabic: {
+                partnerTitle: 'اختر الشريك', girls: 'بنات', boys: 'شباب', any: 'الكل',
+                levelTitle: 'مستوى الشريك', findBtn: 'ابحث عن شريك',
+                searchTitle: 'جارٍ البحث عن شريك...', searchSub: 'يرجى الانتظار، نبحث لك عن أفضل شريك للمحادثة',
+                cancelBtn: 'إلغاء', historyTitle: 'المحادثات الأخيرة', noHistory: 'لا توجد محادثات بعد'
+            },
+            turkish: {
+                partnerTitle: 'Partner Seçin', girls: 'Kızlar', boys: 'Erkekler', any: 'Hepsi',
+                levelTitle: 'Partner Seviyesi', findBtn: 'Partner Bul',
+                searchTitle: 'Partner aranıyor...', searchSub: 'Lütfen bekleyin, size en uygun konuşma partnerini arıyoruz',
+                cancelBtn: 'İptal', historyTitle: 'Son Görüşmeler', noHistory: 'Henüz görüşme yok'
+            },
+            english: {
+                partnerTitle: 'Choose Partner', girls: 'Girls', boys: 'Boys', any: 'Any',
+                levelTitle: 'Partner Level', findBtn: 'Find Partner',
+                searchTitle: 'Searching for partner...', searchSub: 'Please wait, we are finding the best conversation partner for you',
+                cancelBtn: 'Cancel', historyTitle: 'Recent Calls', noHistory: 'No calls yet'
+            }
+        };
+
+        var levelSteps = ['A1','A2','B1','B2','C1','C2'];
+        var talkFilter = { gender: 'any', minLevel: 0, maxLevel: 5 };
+
+        function switchTab(tabName) {
+            var tabs = document.querySelectorAll('.tab-content');
+            for (var i = 0; i < tabs.length; i++) {
+                tabs[i].classList.remove('active');
+            }
+            document.getElementById('tab-' + tabName).classList.add('active');
+
+            var navTabs = document.querySelectorAll('.nav-tab');
+            for (var i = 0; i < navTabs.length; i++) {
+                navTabs[i].classList.remove('active');
+            }
+            document.querySelector('.nav-tab[data-tab="' + tabName + '"]').classList.add('active');
+        }
+
+        function buildTalkContent(lang) {
+            var t = talkLabels[lang];
+            var h = '<div class="talk-section">';
+
+            // Gender filter
+            h += '<div class="talk-card" style="animation:slideUp .4s ease both">';
+            h += '<div class="talk-section-title">' + t.partnerTitle + '</div>';
+            h += '<div class="filter-group">';
+            h += '<div class="filter-btn' + (talkFilter.gender==='girls'?' active':'') + '" onclick="setGenderFilter(\'girls\')">';
+            h += '<div class="filter-btn-emoji">👩</div><div class="filter-btn-label">' + t.girls + '</div></div>';
+            h += '<div class="filter-btn' + (talkFilter.gender==='boys'?' active':'') + '" onclick="setGenderFilter(\'boys\')">';
+            h += '<div class="filter-btn-emoji">👨</div><div class="filter-btn-label">' + t.boys + '</div></div>';
+            h += '<div class="filter-btn' + (talkFilter.gender==='any'?' active':'') + '" onclick="setGenderFilter(\'any\')">';
+            h += '<div class="filter-btn-emoji">👥</div><div class="filter-btn-label">' + t.any + '</div></div>';
+            h += '</div></div>';
+
+            // Level range slider
+            h += '<div class="talk-card" style="animation:slideUp .4s ease .1s both">';
+            h += '<div class="talk-section-title">' + t.levelTitle + '</div>';
+            h += '<div class="range-header"><div class="range-label"></div>';
+            h += '<div class="range-value" id="rangeValue">' + levelSteps[talkFilter.minLevel] + ' — ' + levelSteps[talkFilter.maxLevel] + '</div></div>';
+            h += '<div class="range-track" id="rangeTrack">';
+            h += '<div class="range-bar"><div class="range-fill" id="rangeFill"></div></div>';
+            h += '<div class="range-thumb" id="thumbMin"></div>';
+            h += '<div class="range-thumb" id="thumbMax"></div>';
+            h += '</div>';
+            h += '<div class="range-labels" id="rangeLabels">';
+            for (var i = 0; i < levelSteps.length; i++) {
+                h += '<span>' + levelSteps[i] + '</span>';
+            }
+            h += '</div></div>';
+
+            // Find button
+            h += '<button class="find-btn" onclick="findPartner()" style="animation:slideUp .4s ease .2s both">';
+            h += '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>';
+            h += t.findBtn + '</button>';
+
+            // Call history
+            var history = getCallHistory(lang);
+            if (history.length > 0) {
+                h += '<div class="history-section" style="animation:slideUp .4s ease .3s both">';
+                h += '<div class="history-title">' + t.historyTitle + '</div>';
+                h += '<div class="history-list">';
+                for (var i = 0; i < history.length; i++) {
+                    var item = history[i];
+                    var letter = (item.name || '?')[0].toUpperCase();
+                    var dur = formatDuration(item.duration);
+                    var timeAgo = formatTimeAgo(item.timestamp, lang);
+                    h += '<div class="history-item">';
+                    h += '<div class="history-avatar">' + letter + '</div>';
+                    h += '<div class="history-info"><div class="history-name">' + item.name + '</div>';
+                    h += '<div class="history-meta">' + item.level + ' · ' + timeAgo + '</div></div>';
+                    h += '<div class="history-duration">' + dur + '</div>';
+                    h += '</div>';
+                }
+                h += '</div></div>';
+            }
+
+            h += '</div>';
+            return h;
+        }
+
+        // Call history — localStorage'da saqlash (har til uchun alohida, max 10 ta)
+        function getCallHistory(lang) {
+            try { return JSON.parse(localStorage.getItem('speak_history_' + lang) || '[]'); }
+            catch(e) { return []; }
+        }
+
+        function saveCallToHistory(lang, partnerName, partnerLevel, durationSecs) {
+            var history = getCallHistory(lang);
+            history.unshift({
+                name: partnerName,
+                level: partnerLevel,
+                duration: durationSecs,
+                timestamp: Date.now()
+            });
+            if (history.length > 10) history = history.slice(0, 10);
+            localStorage.setItem('speak_history_' + lang, JSON.stringify(history));
+        }
+
+        function formatDuration(secs) {
+            if (!secs || secs < 1) return '0:00';
+            var m = Math.floor(secs / 60);
+            var s = secs % 60;
+            return m + ':' + String(s).padStart(2, '0');
+        }
+
+        function formatTimeAgo(ts, lang) {
+            var diff = Math.floor((Date.now() - ts) / 1000);
+            if (diff < 60) return lang==='arabic'?'الآن':lang==='turkish'?'Az önce':'Just now';
+            if (diff < 3600) {
+                var m = Math.floor(diff / 60);
+                return lang==='arabic'?'منذ '+m+' د':lang==='turkish'?m+' dk önce':m+'m ago';
+            }
+            if (diff < 86400) {
+                var hr = Math.floor(diff / 3600);
+                return lang==='arabic'?'منذ '+hr+' س':lang==='turkish'?hr+' sa önce':hr+'h ago';
+            }
+            var d = Math.floor(diff / 86400);
+            return lang==='arabic'?'منذ '+d+' يوم':lang==='turkish'?d+' gün önce':d+'d ago';
+        }
+
+        function setGenderFilter(gender) {
+            talkFilter.gender = gender;
+            var btns = document.querySelectorAll('.filter-btn');
+            for (var i = 0; i < btns.length; i++) btns[i].classList.remove('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        function initRangeSlider() {
+            var track = document.getElementById('rangeTrack');
+            if (!track) return;
+            var fill = document.getElementById('rangeFill');
+            var thumbMin = document.getElementById('thumbMin');
+            var thumbMax = document.getElementById('thumbMax');
+            var maxSteps = levelSteps.length - 1;
+
+            function updateUI() {
+                var pMin = (talkFilter.minLevel / maxSteps) * 100;
+                var pMax = (talkFilter.maxLevel / maxSteps) * 100;
+                fill.style.left = pMin + '%';
+                fill.style.width = (pMax - pMin) + '%';
+                thumbMin.style.left = pMin + '%';
+                thumbMax.style.left = pMax + '%';
+                document.getElementById('rangeValue').textContent = levelSteps[talkFilter.minLevel] + ' — ' + levelSteps[talkFilter.maxLevel];
+                var labels = document.getElementById('rangeLabels').children;
+                for (var i = 0; i < labels.length; i++) {
+                    if (i >= talkFilter.minLevel && i <= talkFilter.maxLevel) {
+                        labels[i].classList.add('in-range');
+                    } else {
+                        labels[i].classList.remove('in-range');
+                    }
+                }
+            }
+
+            function getStep(clientX) {
+                var rect = track.getBoundingClientRect();
+                var pct = (clientX - rect.left) / rect.width;
+                return Math.max(0, Math.min(maxSteps, Math.round(pct * maxSteps)));
+            }
+
+            function makeDrag(thumb, isMax) {
+                function onMove(e) {
+                    var cx = e.touches ? e.touches[0].clientX : e.clientX;
+                    var step = getStep(cx);
+                    if (isMax) {
+                        talkFilter.maxLevel = Math.max(step, talkFilter.minLevel);
+                    } else {
+                        talkFilter.minLevel = Math.min(step, talkFilter.maxLevel);
+                    }
+                    updateUI();
+                }
+                function onEnd() {
+                    document.removeEventListener('mousemove', onMove);
+                    document.removeEventListener('mouseup', onEnd);
+                    document.removeEventListener('touchmove', onMove);
+                    document.removeEventListener('touchend', onEnd);
+                }
+                thumb.addEventListener('mousedown', function(e) {
+                    e.preventDefault();
+                    document.addEventListener('mousemove', onMove);
+                    document.addEventListener('mouseup', onEnd);
+                });
+                thumb.addEventListener('touchstart', function(e) {
+                    e.preventDefault();
+                    document.addEventListener('touchmove', onMove, {passive:false});
+                    document.addEventListener('touchend', onEnd);
+                }, {passive:false});
+            }
+
+            makeDrag(thumbMin, false);
+            makeDrag(thumbMax, true);
+            updateUI();
+        }
+
+        // ===== WEBSOCKET + WEBRTC =====
+        var matchWs = null;
+        var peerConnection = null;
+        var localStream = null;
+        var callTimerInterval = null;
+        var callSeconds = 0;
+        var isMuted = false;
+        var micReady = false;
+        var pendingOffer = null;
+        var callStartTime = 0;
+        var currentPartner = null;
+
+        var callLabels = {
+            arabic: { connected: 'متصل', connecting: 'جارٍ الاتصال...', reconnecting: 'إعادة الاتصال...', ended: 'انتهت المكالمة' },
+            turkish: { connected: 'Bağlandı', connecting: 'Bağlanıyor...', reconnecting: 'Yeniden bağlanıyor...', ended: 'Görüşme bitti' },
+            english: { connected: 'Connected', connecting: 'Connecting...', reconnecting: 'Reconnecting...', ended: 'Call ended' }
+        };
+
+        // Mikrofon ruxsatini oldindan olish
+        function prewarmMic() {
+            if (micReady) return;
+            navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+                .then(function(stream) { localStream = stream; micReady = true; })
+                .catch(function() {});
+        }
+
+        function getWsUrl() {
+            var proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            return proto + '//' + location.host + '/ws/match';
+        }
+
+        function findPartner() {
+            // Avval mikrofon ruxsati
+            navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+                .then(function(stream) {
+                    localStream = stream;
+                    micReady = true;
+                    openSearchPage();
+                })
+                .catch(function() {});
+        }
+
+        function openSearchPage() {
+            var data = langs[currentLang];
+            var t = talkLabels[currentLang];
+            var searchSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="#8e8e93" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>';
+
+            var h = '<div class="' + data.theme + '">';
+            h += '<div style="position:relative">';
+            h += '<div class="search-back"><button class="back-btn" onclick="cancelSearch()">' + backSvg + '</button></div>';
+            h += '<div class="search-page">';
+            h += '<div class="search-icon-wrap">' + searchSvg + '</div>';
+            h += '<div class="search-title">' + t.searchTitle + '</div>';
+            h += '<div class="search-subtitle">' + t.searchSub + '</div>';
+            h += '<div class="search-dots"><div class="search-dot"></div><div class="search-dot"></div><div class="search-dot"></div></div>';
+            h += '<button class="search-cancel-btn" onclick="cancelSearch()">' + t.cancelBtn + '</button>';
+            h += '</div></div></div>';
+
+            document.getElementById('searchContent').innerHTML = h;
+            navigate('progressPage', 'searchPage', true);
+            startSearch();
+        }
+
+        function cancelSearch() {
+            if (matchWs) {
+                try { matchWs.send(JSON.stringify({action: 'cancel'})); } catch(e) {}
+                matchWs.close();
+                matchWs = null;
+            }
+            navigate('searchPage', 'progressPage', false);
+        }
+
+        function startSearch() {
+            var userLevel = getSavedLevel(currentLang) || 'A1';
+            var userGender = localStorage.getItem('speak_user_gender') || '';
+
+            matchWs = new WebSocket(getWsUrl());
+
+            matchWs.onopen = function() {
+                matchWs.send(JSON.stringify({
+                    action: 'search',
+                    filters: {
+                        lang: currentLang,
+                        gender: talkFilter.gender,
+                        minLevel: talkFilter.minLevel,
+                        maxLevel: talkFilter.maxLevel,
+                        userLevel: userLevel,
+                        userGender: userGender
+                    },
+                    user_info: {
+                        name: tgUser ? tgUser.first_name || 'User' : 'User',
+                        level: userLevel,
+                        gender: userGender
+                    }
+                }));
+            };
+
+            matchWs.onmessage = function(e) {
+                var msg = JSON.parse(e.data);
+
+                if (msg.action === 'matched') {
+                    // Partner topildi! Call sahifasiga o'tish
+                    showCallPage(msg.partner, msg.is_caller);
+                } else if (msg.action === 'call-ended') {
+                    endCall(true);
+                }
+                // WebRTC signaling
+                else if (msg.action === 'offer') {
+                    handleOffer(msg.offer);
+                } else if (msg.action === 'answer') {
+                    handleAnswer(msg.answer);
+                } else if (msg.action === 'ice-candidate') {
+                    handleIceCandidate(msg.candidate);
+                } else if (msg.action === 'timer-sync') {
+                    if (!callTimerInterval) {
+                        callStartTime = msg.startTime;
+                        startTimerFromTimestamp(callStartTime);
+                    }
+                } else if (msg.action === 'connection-state') {
+                    updatePartnerState(msg.state);
+                } else if (msg.action === 'mute-state') {
+                    var badge = document.getElementById('partnerMuted');
+                    if (badge) { if (msg.muted) badge.classList.add('show'); else badge.classList.remove('show'); }
+                }
+            };
+
+            matchWs.onclose = function() { matchWs = null; };
+        }
+
+        function showCallPage(partner, isCaller) {
+            var data = langs[currentLang];
+            var cl = callLabels[currentLang];
+            var letter = (partner.name || '?')[0].toUpperCase();
+
+            var h = '<div class="' + data.theme + '">';
+            h += '<div class="call-page">';
+            h += '<div class="call-avatar">' + letter + '</div>';
+            h += '<div class="call-name">' + (partner.name || 'Partner') + '</div>';
+            h += '<div class="call-level-badge">' + (partner.level || '?') + '</div>';
+            h += '<div class="call-status" id="callStatus">' + cl.connecting + '</div>';
+            h += '<div class="call-wave" id="callWave">';
+            for (var i = 0; i < 7; i++) h += '<div class="call-wave-bar"></div>';
+            h += '</div>';
+            h += '<div class="call-timer" id="callTimer">00:00</div>';
+            h += '<div class="partner-muted-badge" id="partnerMuted">🔇 ' + (currentLang==='arabic'?'الشريك كتم صوته':currentLang==='turkish'?'Partner sessiz':'Partner muted') + '</div>';
+            h += '<div class="call-actions">';
+            h += '<div class="call-action-wrap"><button class="call-action-btn call-mute" id="muteBtn" onclick="toggleMute()">';
+            h += '<svg id="muteIcon" viewBox="0 0 24 24" fill="none" stroke="#8e8e93" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>';
+            h += '</button><div class="call-action-label" id="muteLabel">' + (currentLang==='arabic'?'كتم':currentLang==='turkish'?'Sessize Al':'Mute') + '</div></div>';
+            h += '<div class="call-action-wrap"><button class="call-action-btn call-end" onclick="endCall(false)">';
+            h += '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 16.92v3a2 2 0 01-2.18 2 19.86 19.86 0 01-8.63-3.07 19.5 19.5 0 01-6-6A19.86 19.86 0 013.12 4.18 2 2 0 015.11 2h3a2 2 0 012 1.72c.127.96.362 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 10.91a16 16 0 006 6l2.27-2.27a2 2 0 012.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0123 16.92z"/></svg>';
+            h += '</button><div class="call-action-label">' + (currentLang==='arabic'?'إنهاء':currentLang==='turkish'?'Bitir':'End') + '</div></div>';
+            h += '<div class="call-action-wrap"><button class="call-action-btn call-speaker" id="speakerBtn" onclick="toggleSpeaker()">';
+            h += '<svg id="speakerIcon" viewBox="0 0 24 24" fill="none" stroke="#8e8e93" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 010 14.14"/><path d="M15.54 8.46a5 5 0 010 7.07"/></svg>';
+            h += '</button><div class="call-action-label" id="speakerLabel">' + (currentLang==='arabic'?'مكبر':currentLang==='turkish'?'Hoparlör':'Speaker') + '</div></div>';
+            h += '</div></div></div>';
+
+            currentPartner = partner;
+            document.getElementById('callContent').innerHTML = h;
+            navigate('searchPage', 'callPage', true);
+
+            // WebRTC boshlash
+            startWebRTC(isCaller);
+        }
+
+        function startWebRTC(isCaller) {
+            var config = { iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' }
+            ]};
+            peerConnection = new RTCPeerConnection(config);
+            pendingOffer = null;
+
+            peerConnection.onicecandidate = function(e) {
+                if (e.candidate && matchWs) matchWs.send(JSON.stringify({ action: 'ice-candidate', candidate: e.candidate }));
+            };
+
+            peerConnection.onconnectionstatechange = function() {
+                var state = peerConnection ? peerConnection.connectionState : 'closed';
+                var cl = callLabels[currentLang];
+                var statusEl = document.getElementById('callStatus');
+                if (state === 'connected') {
+                    if (statusEl) statusEl.textContent = cl.connected;
+                    if (!callTimerInterval) {
+                        callStartTime = Date.now();
+                        startTimerFromTimestamp(callStartTime);
+                        if (matchWs) matchWs.send(JSON.stringify({ action: 'timer-sync', startTime: callStartTime }));
+                    }
+                    if (matchWs) matchWs.send(JSON.stringify({ action: 'connection-state', state: 'connected' }));
+                } else if (state === 'connecting') {
+                    if (statusEl) statusEl.textContent = cl.connecting;
+                } else if (state === 'disconnected' || state === 'failed') {
+                    if (statusEl) statusEl.textContent = cl.reconnecting;
+                    if (matchWs) matchWs.send(JSON.stringify({ action: 'connection-state', state: 'reconnecting' }));
+                }
+            };
+
+            peerConnection.ontrack = function(e) {
+                var existing = document.getElementById('remoteAudio');
+                if (existing) existing.remove();
+                var audio = document.createElement('audio');
+                audio.srcObject = e.streams[0];
+                audio.autoplay = true;
+                audio.id = 'remoteAudio';
+                document.body.appendChild(audio);
+            };
+
+            function setupTracks(stream) {
+                localStream = stream;
+                micReady = true;
+                stream.getTracks().forEach(function(track) { peerConnection.addTrack(track, stream); });
+                if (isCaller) {
+                    peerConnection.createOffer()
+                        .then(function(offer) { return peerConnection.setLocalDescription(offer); })
+                        .then(function() { matchWs.send(JSON.stringify({ action: 'offer', offer: peerConnection.localDescription })); });
+                } else if (pendingOffer) {
+                    processOffer(pendingOffer);
+                    pendingOffer = null;
+                }
+            }
+
+            if (localStream && micReady) {
+                setupTracks(localStream);
+            } else {
+                navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+                    .then(setupTracks)
+                    .catch(function(err) { console.error('Mikrofon xatosi:', err); });
+            }
+        }
+
+        function processOffer(offer) {
+            peerConnection.setRemoteDescription(new RTCSessionDescription(offer))
+                .then(function() { return peerConnection.createAnswer(); })
+                .then(function(answer) { return peerConnection.setLocalDescription(answer); })
+                .then(function() { matchWs.send(JSON.stringify({ action: 'answer', answer: peerConnection.localDescription })); });
+        }
+
+        function handleOffer(offer) {
+            if (!peerConnection) return;
+            if (!micReady) { pendingOffer = offer; return; }
+            processOffer(offer);
+        }
+
+        function handleAnswer(answer) {
+            if (!peerConnection) return;
+            peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+        }
+
+        function handleIceCandidate(candidate) {
+            if (!peerConnection) return;
+            peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+        }
+
+        function updatePartnerState(state) {
+            var cl = callLabels[currentLang];
+            var statusEl = document.getElementById('callStatus');
+            if (!statusEl) return;
+            if (state === 'connected') statusEl.textContent = cl.connected;
+            else if (state === 'reconnecting') statusEl.textContent = cl.reconnecting;
+        }
+
+        var isSpeaker = false;
+
+        function toggleMute() {
+            if (!localStream) return;
+            isMuted = !isMuted;
+            localStream.getAudioTracks().forEach(function(track) { track.enabled = !isMuted; });
+            var btn = document.getElementById('muteBtn');
+            var icon = document.getElementById('muteIcon');
+            var label = document.getElementById('muteLabel');
+            if (btn) { if (isMuted) btn.classList.add('active-btn'); else btn.classList.remove('active-btn'); }
+            if (icon) {
+                if (isMuted) {
+                    icon.innerHTML = '<line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 005.12 2.12M15 9.34V4a3 3 0 00-5.94-.6"/><path d="M17 16.95A7 7 0 015 12v-2m14 0v2c0 .76-.12 1.5-.35 2.18"/><line x1="12" y1="19" x2="12" y2="23"/>';
+                } else {
+                    icon.innerHTML = '<path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/>';
+                }
+            }
+            if (label) label.textContent = isMuted ? (currentLang==='arabic'?'صوت':currentLang==='turkish'?'Sesi Aç':'Unmute') : (currentLang==='arabic'?'كتم':currentLang==='turkish'?'Sessize Al':'Mute');
+            // Partnerga xabar berish
+            if (matchWs) matchWs.send(JSON.stringify({ action: 'mute-state', muted: isMuted }));
+        }
+
+        function toggleSpeaker() {
+            isSpeaker = !isSpeaker;
+            var audio = document.getElementById('remoteAudio');
+            if (audio && audio.setSinkId) {
+                audio.setSinkId(isSpeaker ? 'default' : '').catch(function(){});
+            }
+            // Telegram WebApp orqali speaker o'zgartirish
+            if (audio) {
+                audio.volume = isSpeaker ? 1.0 : 1.0;
+                // WebView'da sinkId ishlamasligi mumkin, shuning uchun volume bilan ishlaymiz
+            }
+            var btn = document.getElementById('speakerBtn');
+            var icon = document.getElementById('speakerIcon');
+            var label = document.getElementById('speakerLabel');
+            if (btn) { if (isSpeaker) btn.classList.add('active-btn'); else btn.classList.remove('active-btn'); }
+            if (icon) {
+                if (isSpeaker) {
+                    icon.innerHTML = '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 010 14.14"/><path d="M15.54 8.46a5 5 0 010 7.07"/>';
+                } else {
+                    icon.innerHTML = '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 010 7.07"/>';
+                }
+            }
+            if (label) label.textContent = isSpeaker ? (currentLang==='arabic'?'مكبر':currentLang==='turkish'?'Hoparlör':'Speaker') : (currentLang==='arabic'?'مكبر':currentLang==='turkish'?'Hoparlör':'Speaker');
+        }
+
+        function startTimerFromTimestamp(startTime) {
+            if (callTimerInterval) clearInterval(callTimerInterval);
+            callTimerInterval = setInterval(function() {
+                var elapsed = Math.floor((Date.now() - startTime) / 1000);
+                var mins = String(Math.floor(elapsed / 60)).padStart(2, '0');
+                var secs = String(elapsed % 60).padStart(2, '0');
+                var el = document.getElementById('callTimer');
+                if (el) el.textContent = mins + ':' + secs;
+            }, 1000);
+        }
+
+        function endCall(fromRemote) {
+            // History'ga saqlash
+            if (currentPartner && callStartTime && currentLang) {
+                var dur = Math.floor((Date.now() - callStartTime) / 1000);
+                if (dur >= 1) saveCallToHistory(currentLang, currentPartner.name || 'Partner', currentPartner.level || '?', dur);
+            }
+            currentPartner = null;
+            if (callTimerInterval) { clearInterval(callTimerInterval); callTimerInterval = null; }
+            if (peerConnection) { peerConnection.close(); peerConnection = null; }
+            if (localStream) { localStream.getTracks().forEach(function(t) { t.stop(); }); localStream = null; micReady = false; }
+            var remoteAudio = document.getElementById('remoteAudio');
+            if (remoteAudio) remoteAudio.remove();
+            if (!fromRemote && matchWs) { try { matchWs.send(JSON.stringify({action: 'end-call'})); } catch(e) {} }
+            if (matchWs) { matchWs.close(); matchWs = null; }
+            isMuted = false; isSpeaker = false; pendingOffer = null;
+            // Talk content yangilash (history ko'rinishi uchun)
+            if (currentLang) {
+                var saved = getSavedLevel(currentLang);
+                if (saved) {
+                    var langData = langs[currentLang];
+                    var lvlName = saved;
+                    for (var i = 0; i < langData.levels.length; i++) {
+                        if (langData.levels[i].badge === saved) { lvlName = langData.levels[i].name; break; }
+                    }
+                    showMainPage(currentLang, saved, lvlName);
+                }
+            }
+            navigate('callPage', 'progressPage', false);
+        }
+
+        function showMainPage(lang, badge, levelName) {
+            var data = langs[lang];
+            var labels = navLabels[lang];
+            var placeholders = tabPlaceholders[lang];
+
+            var h = '<div class="' + data.theme + ' main-page">';
+
+            // Back button
+            h += '<div class="nav-header"><button class="back-btn" onclick="navigate(\'progressPage\',\'homePage\',false)">' + backSvg + '</button>';
+            h += '<div class="nav-title">' + data.langName + ' — ' + badge + '</div></div>';
+
+            // Talk tab (active by default)
+            h += '<div class="tab-content active" id="tab-talk">';
+            h += buildTalkContent(lang);
+            h += '</div>';
+
+            // Other tabs
+            var otherTabs = ['cefr', 'premium', 'leaders', 'profile'];
+            for (var t = 0; t < otherTabs.length; t++) {
+                var key = otherTabs[t];
+                var p = placeholders[key];
+                h += '<div class="tab-content" id="tab-' + key + '">';
+                h += '<div class="tab-placeholder">';
+                h += '<div class="tab-placeholder-icon">' + p.icon + '</div>';
+                h += '<div class="tab-placeholder-title">' + p.title + '</div>';
+                h += '<div class="tab-placeholder-text">' + p.text + '</div>';
+                h += '</div></div>';
+            }
+
+            // Bottom nav
+            h += '<div class="bottom-nav ' + data.theme + '">';
+            h += '<button class="nav-tab active" data-tab="talk" onclick="switchTab(\'talk\')">' + tabIcons.talk + '<span class="nav-tab-label">' + labels.talk + '</span></button>';
+            h += '<button class="nav-tab" data-tab="cefr" onclick="switchTab(\'cefr\')">' + tabIcons.cefr + '<span class="nav-tab-label">' + labels.cefr + '</span></button>';
+            h += '<button class="nav-tab" data-tab="premium" onclick="switchTab(\'premium\')">' + tabIcons.premium + '<span class="nav-tab-label">' + labels.premium + '</span></button>';
+            h += '<button class="nav-tab" data-tab="leaders" onclick="switchTab(\'leaders\')">' + tabIcons.leaders + '<span class="nav-tab-label">' + labels.leaders + '</span></button>';
+            h += '<button class="nav-tab" data-tab="profile" onclick="switchTab(\'profile\')">' + tabIcons.profile + '<span class="nav-tab-label">' + labels.profile + '</span></button>';
+            h += '</div>';
+
+            h += '</div>';
+            document.getElementById('progressContent').innerHTML = h;
+
+            // Slider'ni ishga tushirish
+            setTimeout(initRangeSlider, 100);
+        }
+    </script>
+</body>
+</html>

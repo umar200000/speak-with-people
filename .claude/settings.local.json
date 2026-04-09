@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(py:*)",
+      "Bash(winget install:*)",
+      "Bash(\"/c/Users/Umar/AppData/Local/Programs/Python/Python314/python.exe\" --version)",
+      "Read(//c/Users/Umar/AppData/Local/Programs/**)",
+      "Bash(where python:*)",
+      "Bash(ls /c/Python*)",
+      "Bash(winget:*)",
+      "Bash(powershell.exe:*)",
+      "Bash(/c/Users/Umar/AppData/Local/Programs/Python/Python312/python.exe:*)",
+      "Bash(\"/c/Users/Umar/AppData/Local/Programs/Python/Python312/python.exe\" /c/Users/Umar/Desktop/speak/run.py)",
+      "Read(//c/Users/Umar/Desktop/**)",
+      "Bash(\"/c/Users/Umar/AppData/Local/Programs/Python/Python312/python.exe\" -c \"import zipfile; zipfile.ZipFile\\('ngrok.zip'\\).extractall\\('ngrok'\\)\")",
+      "Bash(/c/Users/Umar/Desktop/ngrok/ngrok.exe authtoken:*)",
+      "Bash(/c/Users/Umar/Desktop/ngrok/ngrok.exe http:*)",
+      "Bash(/c/Users/Umar/Desktop/cloudflared.exe tunnel:*)",
+      "Bash(npm install:*)",
+      "Bash(lt:*)",
+      "Bash(python:*)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8080/)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" https://basics-anatomy-automobile-algebra.trycloudflare.com/)",
+      "Bash(taskkill //F //IM \"python.exe\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" https://blues-felt-lid-units.trycloudflare.com/)",
+      "Bash(tasklist)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" https://deaths-hayes-tourism-photos.trycloudflare.com/)",
+      "Bash(taskkill //F //FI \"IMAGENAME eq python.exe\")",
+      "Bash(taskkill //F //FI \"WINDOWTITLE eq python*\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" https://basement-brakes-glow-libraries.trycloudflare.com/)",
+      "Bash(curl -s \"https://api.telegram.org/bot8793984992:AAHWlGhbzKXKjazxSG05eQNtnjNfXFyrL-4/getMe\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d\\)\")",
+      "Bash(curl -s -o /dev/null -w '%{http_code}' --include --no-buffer -H 'Connection: Upgrade' -H 'Upgrade: websocket' -H 'Sec-WebSocket-Version: 13' -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' http://localhost:8080/ws/match)",
+      "Bash(curl -s -o /dev/null -w '%{http_code}' --include --no-buffer -H 'Connection: Upgrade' -H 'Upgrade: websocket' -H 'Sec-WebSocket-Version: 13' -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' https://basement-brakes-glow-libraries.trycloudflare.com/ws/match)"
+    ]
+  }
+}
