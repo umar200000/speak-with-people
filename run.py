@@ -3,7 +3,7 @@ import subprocess
 import sys
 import os
 
-PYTHON = os.path.join(os.path.dirname(sys.executable), "python.exe") or sys.executable
+PYTHON = sys.executable
 DIR = os.path.dirname(__file__)
 
 

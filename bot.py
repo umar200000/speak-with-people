@@ -9,7 +9,7 @@ from telegram.ext import (
 from database import update_user_phone
 
 TOKEN = "8793984992:AAHWlGhbzKXKjazxSG05eQNtnjNfXFyrL-4"
-WEBAPP_URL = "https://basement-brakes-glow-libraries.trycloudflare.com"
+WEBAPP_URL = "https://speakwith.tech"
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
