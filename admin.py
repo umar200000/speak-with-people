@@ -121,7 +121,6 @@ HTML_TEMPLATE = Template("""
     </div>
 
     <div class="main">
-    <h1>bu ci/cd ni test qilish</h1>
         <div class="stats">
             <div class="stat-card">
                 <div class="number">$total</div>
