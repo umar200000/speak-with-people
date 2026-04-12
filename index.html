@@ -127,7 +127,24 @@
             cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.08); flex-shrink: 0;
         }
         .back-btn svg { display: block; }
-        .nav-title { font-size: 24px; font-weight: 700; }
+        .nav-title { font-size: 24px; font-weight: 700; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .refresh-btn {
+            width: 36px; height: 36px; border-radius: 50%; border: none;
+            background: white; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.08); flex-shrink: 0;
+            -webkit-tap-highlight-color: transparent;
+            transition: transform 0.2s ease;
+        }
+        .refresh-btn:active { transform: scale(0.92); }
+        .refresh-btn svg { width: 18px; height: 18px; display: block; }
+        .refresh-btn.spinning svg { animation: refreshSpin 0.7s linear; }
+        @keyframes refreshSpin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .theme-arabic .refresh-btn svg path, .theme-arabic .refresh-btn svg circle, .theme-arabic .refresh-btn svg polyline { stroke: #34c759; }
+        .theme-turkish .refresh-btn svg path, .theme-turkish .refresh-btn svg circle, .theme-turkish .refresh-btn svg polyline { stroke: #ff3b30; }
+        .theme-english .refresh-btn svg path, .theme-english .refresh-btn svg circle, .theme-english .refresh-btn svg polyline { stroke: #007aff; }
         .level-subtitle { font-size: 15px; color: #8e8e93; margin-bottom: 20px; padding-left: 48px; }
         .levels { display: flex; flex-direction: column; gap: 12px; max-width: 500px; margin: 0 auto; }
         .level-card {
@@ -439,7 +456,27 @@
         }
 
         /* ===== PREMIUM TAB ===== */
-        .premium-wrap { max-width: 500px; margin: 0 auto; padding: 4px 0 20px; }
+        .premium-wrap { max-width: 500px; margin: 0 auto; padding: 4px 0 20px; display: flex; flex-direction: column; gap: 14px; }
+        .section-title {
+            font-size: 13px; font-weight: 700; color: #8e8e93;
+            text-transform: uppercase; letter-spacing: 0.5px; padding: 4px 6px 0;
+        }
+        .sub-status-card {
+            background: linear-gradient(135deg, #34c759, #30b050);
+            border-radius: 18px; padding: 18px 20px; color: white;
+            box-shadow: 0 6px 20px rgba(52,199,89,0.25);
+            animation: slideUp .4s ease both;
+        }
+        .sub-status-card.expired { background: linear-gradient(135deg, #ff9500, #e8860a); box-shadow: 0 6px 20px rgba(255,149,0,0.25); }
+        .sub-status-header { display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 700; opacity: 0.95; margin-bottom: 8px; letter-spacing: 0.3px; }
+        .sub-status-header .crown { font-size: 18px; }
+        .sub-status-title { font-size: 20px; font-weight: 800; margin-bottom: 10px; }
+        .sub-status-dates { display: flex; gap: 12px; margin-top: 14px; }
+        .sub-date-block { flex: 1; background: rgba(255,255,255,0.18); border-radius: 12px; padding: 10px 12px; backdrop-filter: blur(6px); }
+        .sub-date-label { font-size: 11px; opacity: 0.85; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+        .sub-date-value { font-size: 15px; font-weight: 700; margin-top: 2px; }
+        .sub-days-left { text-align: center; font-size: 13px; font-weight: 700; margin-top: 12px; opacity: 0.95; }
+
         .balance-card {
             background: white; border-radius: 16px; padding: 18px 20px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06);
@@ -464,16 +501,16 @@
 
         .premium-hero {
             background: linear-gradient(135deg, #007aff, #5856d6);
-            border-radius: 18px; padding: 22px 20px; color: white;
-            display: flex; align-items: center; gap: 16px;
+            border-radius: 18px; padding: 20px 20px; color: white;
+            display: flex; align-items: center; gap: 14px;
             box-shadow: 0 8px 24px rgba(0,122,255,0.25);
             cursor: pointer; -webkit-tap-highlight-color: transparent;
             transition: transform 0.15s ease;
             animation: slideUp .4s ease both;
         }
         .premium-hero:active { transform: scale(0.98); }
-        .theme-arabic .premium-hero { background: linear-gradient(135deg, #34c759, #30b050); box-shadow: 0 8px 24px rgba(52,199,89,0.25); }
-        .theme-turkish .premium-hero { background: linear-gradient(135deg, #ff3b30, #e8352b); box-shadow: 0 8px 24px rgba(255,59,48,0.25); }
+        .premium-hero.speak { background: linear-gradient(135deg, #ff6b35, #ff3b30); box-shadow: 0 8px 24px rgba(255,107,53,0.3); }
+        .premium-hero.speak-premium { background: linear-gradient(135deg, #667eea, #764ba2); box-shadow: 0 8px 24px rgba(118,75,162,0.3); }
         .premium-hero-icon {
             width: 54px; height: 54px; border-radius: 14px; background: rgba(255,255,255,0.2);
             display: flex; align-items: center; justify-content: center; font-size: 30px; flex-shrink: 0;
@@ -613,6 +650,76 @@
             box-shadow: 0 6px 20px rgba(0,0,0,0.25);
         }
         .pay-toast.show { transform: translate(-50%, 0); opacity: 1; }
+
+        /* ===== USAGE BANNER (talk tab) ===== */
+        .usage-banner {
+            background: linear-gradient(135deg, #f8f9ff, #ffffff);
+            border: 1px solid #e5e5ea;
+            border-radius: 14px; padding: 12px 16px;
+            margin-bottom: 14px;
+            display: flex; align-items: center; gap: 12px;
+            animation: slideUp .35s ease both;
+        }
+        .usage-banner.premium {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none; color: white;
+            box-shadow: 0 4px 16px rgba(118,75,162,0.25);
+        }
+        .usage-banner.low {
+            background: linear-gradient(135deg, #fff5e6, #fffaf0);
+            border-color: #ffcc80;
+        }
+        .usage-banner.out {
+            background: linear-gradient(135deg, #fde2e2, #fff0f0);
+            border-color: #ffb3b3;
+        }
+        .usage-banner-icon {
+            width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; background: rgba(0,0,0,0.05);
+        }
+        .usage-banner.premium .usage-banner-icon { background: rgba(255,255,255,0.2); }
+        .usage-banner-text { flex: 1; min-width: 0; }
+        .usage-banner-title { font-size: 13px; font-weight: 700; color: #1c1c1e; }
+        .usage-banner.premium .usage-banner-title { color: white; }
+        .usage-banner-sub { font-size: 12px; color: #8e8e93; margin-top: 2px; }
+        .usage-banner.premium .usage-banner-sub { color: rgba(255,255,255,0.85); }
+
+        /* Call timer limit countdown */
+        .call-limit-info {
+            font-size: 12px; color: #ff9500; font-weight: 700;
+            margin-top: 8px; text-align: center;
+        }
+        .call-limit-info.warn { color: #ff3b30; animation: pulse 1s ease-in-out infinite; }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+        /* Generic modal overlay for mini app */
+        .mini-modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.55); z-index: 300;
+            align-items: center; justify-content: center; padding: 20px;
+        }
+        .mini-modal-overlay.active { display: flex; animation: fadeIn 0.2s ease; }
+        .mini-modal {
+            background: white; border-radius: 18px; padding: 24px 22px;
+            max-width: 380px; width: 100%; text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: slideUp 0.3s ease both;
+        }
+        .mini-modal-icon { font-size: 44px; margin-bottom: 10px; }
+        .mini-modal-title { font-size: 19px; font-weight: 700; color: #1c1c1e; margin-bottom: 8px; }
+        .mini-modal-text { font-size: 14px; color: #666; line-height: 1.5; margin-bottom: 18px; }
+        .mini-modal-actions { display: flex; gap: 10px; }
+        .mini-modal-actions button {
+            flex: 1; padding: 13px; border: none; border-radius: 12px;
+            font-size: 14px; font-weight: 700; cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .mini-modal-actions .secondary { background: #f2f2f7; color: #555; }
+        .mini-modal-actions .primary {
+            background: linear-gradient(135deg, #667eea, #764ba2); color: white;
+        }
+        .mini-modal-actions .primary:active { transform: scale(0.97); }
     </style>
 </head>
 <body>
@@ -698,6 +805,19 @@
     <div class="page" id="tariffsPage"><div id="tariffsContent"></div></div>
     <div class="page" id="paymentPage"><div id="paymentContent"></div></div>
     <div class="pay-toast" id="payToast">Nusxa olindi</div>
+
+    <!-- Limit reached modal -->
+    <div class="mini-modal-overlay" id="limitModal">
+        <div class="mini-modal">
+            <div class="mini-modal-icon">⏱️</div>
+            <div class="mini-modal-title" id="limitModalTitle">Kunlik vaqtingiz tugadi</div>
+            <div class="mini-modal-text" id="limitModalText">Tarifsiz foydalanuvchilar kuniga 8 daqiqa gaplasha oladi. Cheksiz suhbat uchun Speak tarifni sotib oling.</div>
+            <div class="mini-modal-actions">
+                <button class="secondary" onclick="closeLimitModal()" id="limitCancelBtn">Yopish</button>
+                <button class="primary" onclick="fromLimitToSpeak()" id="limitBuyBtn">Speak sotib olish</button>
+            </div>
+        </div>
+    </div>
 
     <script>
         var tg = window.Telegram.WebApp;
@@ -982,6 +1102,9 @@
             var t = talkLabels[lang];
             var h = '<div class="talk-section">';
 
+            // Usage banner (async to'ldiriladi)
+            h += '<div id="usageBanner"></div>';
+
             // Gender filter
             h += '<div class="talk-card" style="animation:slideUp .4s ease both">';
             h += '<div class="talk-section-title">' + t.partnerTitle + '</div>';
@@ -1038,6 +1161,119 @@
 
             h += '</div>';
             return h;
+        }
+
+        // ===== USAGE BANNER / LIMIT =====
+        var lastUsageStatus = null;
+
+        var usageTexts = {
+            arabic: {
+                premiumTitle: '👑 اشتراك بريميوم نشط',
+                premiumSub: 'محادثات غير محدودة',
+                freeTitle: 'وقتك اليومي',
+                freeSub: 'متبقي {m} دقيقة و {s} ثانية من 8 دقائق',
+                outTitle: 'انتهى وقتك اليومي',
+                outSub: 'اشترِ Speak للوصول غير المحدود',
+                limitModalTitle: 'انتهى وقتك اليومي',
+                limitModalText: 'المستخدمون بدون اشتراك يستطيعون التحدث 8 دقائق يومياً. اشترِ Speak للوصول غير المحدود.',
+                limitCancel: 'إغلاق',
+                limitBuy: 'شراء Speak'
+            },
+            turkish: {
+                premiumTitle: '👑 Premium abonelik aktif',
+                premiumSub: 'Sınırsız konuşma',
+                freeTitle: 'Günlük vaktin',
+                freeSub: '8 dakikadan {m} dk {s} sn kaldı',
+                outTitle: 'Günlük vaktin bitti',
+                outSub: 'Sınırsız erişim için Speak satın al',
+                limitModalTitle: 'Günlük vaktin bitti',
+                limitModalText: 'Aboneliği olmayan kullanıcılar günde 8 dakika konuşabilir. Sınırsız erişim için Speak satın al.',
+                limitCancel: 'Kapat',
+                limitBuy: 'Speak satın al'
+            },
+            english: {
+                premiumTitle: '👑 Premium active',
+                premiumSub: 'Unlimited calls',
+                freeTitle: 'Your daily time',
+                freeSub: '{m}m {s}s left out of 8 min',
+                outTitle: 'Daily time is over',
+                outSub: 'Buy Speak for unlimited access',
+                limitModalTitle: 'Daily time is over',
+                limitModalText: 'Users without a subscription get 8 minutes per day. Buy Speak for unlimited access.',
+                limitCancel: 'Close',
+                limitBuy: 'Buy Speak'
+            }
+        };
+
+        function loadUsageBanner(lang) {
+            var userId = tgUser ? tgUser.id : 0;
+            if (!userId) return;
+            fetch('/api/usage/' + userId)
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    lastUsageStatus = data;
+                    renderUsageBanner(lang, data);
+                })
+                .catch(function() {});
+        }
+
+        function renderUsageBanner(lang, data) {
+            var ut = usageTexts[lang] || usageTexts.english;
+            var wrap = document.getElementById('usageBanner');
+            if (!wrap) return;
+            if (data.is_premium) {
+                wrap.innerHTML = (
+                    '<div class="usage-banner premium">' +
+                    '<div class="usage-banner-icon">👑</div>' +
+                    '<div class="usage-banner-text">' +
+                    '<div class="usage-banner-title">' + ut.premiumTitle + '</div>' +
+                    '<div class="usage-banner-sub">' + ut.premiumSub + '</div>' +
+                    '</div></div>'
+                );
+                return;
+            }
+            var rem = data.remaining_seconds || 0;
+            if (rem <= 0) {
+                wrap.innerHTML = (
+                    '<div class="usage-banner out">' +
+                    '<div class="usage-banner-icon">⏱️</div>' +
+                    '<div class="usage-banner-text">' +
+                    '<div class="usage-banner-title">' + ut.outTitle + '</div>' +
+                    '<div class="usage-banner-sub">' + ut.outSub + '</div>' +
+                    '</div></div>'
+                );
+                return;
+            }
+            var m = Math.floor(rem / 60), s = rem % 60;
+            var lowCls = rem <= 120 ? ' low' : '';
+            var subText = ut.freeSub.replace('{m}', m).replace('{s}', s);
+            wrap.innerHTML = (
+                '<div class="usage-banner' + lowCls + '">' +
+                '<div class="usage-banner-icon">⏱️</div>' +
+                '<div class="usage-banner-text">' +
+                '<div class="usage-banner-title">' + ut.freeTitle + '</div>' +
+                '<div class="usage-banner-sub">' + subText + '</div>' +
+                '</div></div>'
+            );
+        }
+
+        function showLimitModal() {
+            var lang = currentLang || 'english';
+            var ut = usageTexts[lang] || usageTexts.english;
+            document.getElementById('limitModalTitle').textContent = ut.limitModalTitle;
+            document.getElementById('limitModalText').textContent = ut.limitModalText;
+            document.getElementById('limitCancelBtn').textContent = ut.limitCancel;
+            document.getElementById('limitBuyBtn').textContent = ut.limitBuy;
+            document.getElementById('limitModal').classList.add('active');
+        }
+        function closeLimitModal() {
+            document.getElementById('limitModal').classList.remove('active');
+        }
+        function fromLimitToSpeak() {
+            closeLimitModal();
+            // Premium tabga o'tkazib, Speak tarif sahifasini ochamiz
+            switchTab('premium');
+            setTimeout(function() { openTariffsPage('speak'); }, 150);
         }
 
         // Call history — localStorage'da saqlash (har til uchun alohida, max 10 ta)
@@ -1185,14 +1421,29 @@
         }
 
         function findPartner() {
-            // Avval mikrofon ruxsati
-            navigator.mediaDevices.getUserMedia({ audio: true, video: false })
-                .then(function(stream) {
-                    localStream = stream;
-                    micReady = true;
-                    openSearchPage();
+            // Oldin server'dan joriy usage/premium holatini olish (localStorage'ga ishonmaslik)
+            var userId = tgUser ? tgUser.id : 0;
+            var proceed = function() {
+                navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+                    .then(function(stream) {
+                        localStream = stream;
+                        micReady = true;
+                        openSearchPage();
+                    })
+                    .catch(function() {});
+            };
+            if (!userId) { proceed(); return; }
+            fetch('/api/usage/' + userId)
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    lastUsageStatus = data;
+                    if (!data.is_premium && (data.remaining_seconds || 0) <= 0) {
+                        showLimitModal();
+                        return;
+                    }
+                    proceed();
                 })
-                .catch(function() {});
+                .catch(proceed);
         }
 
         function openSearchPage() {
@@ -1225,9 +1476,15 @@
             navigate('searchPage', 'progressPage', false);
         }
 
+        var currentCallLimitSec = 0;
+        var currentSelfPremium = false;
+        var currentPartnerPremium = false;
+        var callLimitCheckInterval = null;
+
         function startSearch() {
             var userLevel = getSavedLevel(currentLang) || 'A1';
             var userGender = localStorage.getItem('speak_user_gender') || '';
+            var userId = tgUser ? tgUser.id : 0;
 
             matchWs = new WebSocket(getWsUrl());
 
@@ -1243,6 +1500,7 @@
                         userGender: userGender
                     },
                     user_info: {
+                        telegram_id: userId,
                         name: tgUser ? tgUser.first_name || 'User' : 'User',
                         level: userLevel,
                         gender: userGender
@@ -1254,8 +1512,15 @@
                 var msg = JSON.parse(e.data);
 
                 if (msg.action === 'matched') {
-                    // Partner topildi! Call sahifasiga o'tish
+                    currentCallLimitSec = msg.call_limit_seconds || 0;
+                    currentSelfPremium = !!msg.self_is_premium;
+                    currentPartnerPremium = !!msg.partner_is_premium;
                     showCallPage(msg.partner, msg.is_caller);
+                } else if (msg.action === 'limit-reached') {
+                    // Server vaqtni yo'q deb qaytardi
+                    if (matchWs) { matchWs.close(); matchWs = null; }
+                    navigate('searchPage', 'progressPage', false);
+                    setTimeout(showLimitModal, 250);
                 } else if (msg.action === 'call-ended') {
                     endCall(true);
                 }
@@ -1297,6 +1562,7 @@
             for (var i = 0; i < 7; i++) h += '<div class="call-wave-bar"></div>';
             h += '</div>';
             h += '<div class="call-timer" id="callTimer">00:00</div>';
+            h += '<div class="call-limit-info" id="callLimitInfo"></div>';
             h += '<div class="partner-muted-badge" id="partnerMuted">🔇 ' + (currentLang==='arabic'?'الشريك كتم صوته':currentLang==='turkish'?'Partner sessiz':'Partner muted') + '</div>';
             h += '<div class="call-actions">';
             h += '<div class="call-action-wrap"><button class="call-action-btn call-mute" id="muteBtn" onclick="toggleMute()">';
@@ -1469,16 +1735,61 @@
                 var secs = String(elapsed % 60).padStart(2, '0');
                 var el = document.getElementById('callTimer');
                 if (el) el.textContent = mins + ':' + secs;
+
+                // Limit check (faqat call_limit_seconds > 0 bo'lsa)
+                if (currentCallLimitSec > 0) {
+                    var remaining = currentCallLimitSec - elapsed;
+                    var info = document.getElementById('callLimitInfo');
+                    if (info) {
+                        if (remaining <= 0) {
+                            info.textContent = '';
+                        } else {
+                            var rm = Math.floor(remaining / 60);
+                            var rs = remaining % 60;
+                            var warn = remaining <= 30 ? ' warn' : '';
+                            info.className = 'call-limit-info' + warn;
+                            info.textContent = (currentLang==='arabic'?'الوقت المتبقي: ':currentLang==='turkish'?'Kalan süre: ':'Time left: ') + rm + ':' + (rs<10?'0'+rs:rs);
+                        }
+                    }
+                    if (remaining <= 0) {
+                        // Avto kesish
+                        clearInterval(callTimerInterval);
+                        callTimerInterval = null;
+                        endCall(false);
+                    }
+                }
             }, 1000);
         }
 
         function endCall(fromRemote) {
             // History'ga saqlash
+            var callDurationSec = 0;
             if (currentPartner && callStartTime && currentLang) {
-                var dur = Math.floor((Date.now() - callStartTime) / 1000);
-                if (dur >= 1) saveCallToHistory(currentLang, currentPartner.name || 'Partner', currentPartner.level || '?', dur);
+                callDurationSec = Math.floor((Date.now() - callStartTime) / 1000);
+                if (callDurationSec >= 1) saveCallToHistory(currentLang, currentPartner.name || 'Partner', currentPartner.level || '?', callDurationSec);
             }
+
+            // Usage report serverga (backend o'zi hal qiladi premium bo'lsa skip)
+            var userId = tgUser ? tgUser.id : 0;
+            var partnerTid = currentPartner && currentPartner.telegram_id ? currentPartner.telegram_id : 0;
+            if (userId && callDurationSec > 0) {
+                try {
+                    fetch('/api/usage/report', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            telegram_id: userId,
+                            seconds: callDurationSec,
+                            partner_telegram_id: partnerTid
+                        })
+                    }).catch(function(){});
+                } catch(e) {}
+            }
+
             currentPartner = null;
+            currentCallLimitSec = 0;
+            currentSelfPremium = false;
+            currentPartnerPremium = false;
             if (callTimerInterval) { clearInterval(callTimerInterval); callTimerInterval = null; }
             if (peerConnection) { peerConnection.close(); peerConnection = null; }
             if (localStream) { localStream.getTracks().forEach(function(t) { t.stop(); }); localStream = null; micReady = false; }
@@ -1502,16 +1813,67 @@
             navigate('callPage', 'progressPage', false);
         }
 
+        // ===== REFRESH CURRENT TAB =====
+        function refreshCurrentTab(btn) {
+            if (btn) {
+                btn.classList.add('spinning');
+                setTimeout(function() { btn.classList.remove('spinning'); }, 700);
+            }
+            if (tg && tg.HapticFeedback && tg.HapticFeedback.impactOccurred) {
+                try { tg.HapticFeedback.impactOccurred('light'); } catch(e) {}
+            }
+            if (!currentLang) return;
+
+            var activeTab = document.querySelector('.nav-tab.active');
+            var tabKey = activeTab ? activeTab.getAttribute('data-tab') : 'talk';
+
+            if (tabKey === 'talk') {
+                var tabEl = document.getElementById('tab-talk');
+                if (tabEl) {
+                    tabEl.innerHTML = buildTalkContent(currentLang);
+                    setTimeout(initRangeSlider, 80);
+                    loadUsageBanner(currentLang);
+                }
+            } else if (tabKey === 'premium') {
+                var pTab = document.getElementById('tab-premium');
+                if (pTab) pTab.innerHTML = buildPremiumContent(currentLang);
+            } else {
+                var tabEl2 = document.getElementById('tab-' + tabKey);
+                var ph = (tabPlaceholders[currentLang] || tabPlaceholders.english)[tabKey];
+                if (tabEl2 && ph) {
+                    var html = '<div class="tab-placeholder">';
+                    html += '<div class="tab-placeholder-icon">' + ph.icon + '</div>';
+                    html += '<div class="tab-placeholder-title">' + ph.title + '</div>';
+                    html += '<div class="tab-placeholder-text">' + ph.text + '</div>';
+                    html += '</div>';
+                    tabEl2.innerHTML = html;
+                }
+            }
+        }
+
         // ===== PREMIUM / TARIFFS / PAYMENT =====
         var premiumLabels = {
             arabic: {
-                heroTitle: 'خطط الاختبارات',
-                heroSub: 'اشترِ اختبارات تجريبية — ادفع واحصل على الوصول الفوري',
+                sectionBalance: 'رصيدك',
+                sectionPlans: 'الخطط',
+                mockHeroTitle: 'خطط الاختبارات',
+                mockHeroSub: 'اشترِ اختبارات تجريبية — ادفع واحصل على الوصول الفوري',
+                speakHeroTitle: 'خطة المحادثة',
+                speakHeroSub: 'محادثة غير محدودة — استمتع بمحادثات بلا قيود',
+                speakHeroActiveTitle: 'نشط — مشترك بريميوم',
+                speakHeroActiveSub: 'الوصول غير محدود — انقر لعرض التفاصيل',
                 balanceTitle: 'رصيدك',
                 balanceHas: 'لديك {n} اختبار',
                 balanceZero: 'لا توجد اختبارات حالياً',
+                subActiveHeader: 'الاشتراك نشط',
+                subExpiredHeader: 'انتهت الصلاحية',
+                subStartLabel: 'البداية',
+                subEndLabel: 'النهاية',
+                subDaysLeft: '{n} يوم متبقي',
                 listTitle: 'اختر خطة',
                 listSub: 'اختر عدد الاختبارات المناسب لك',
+                listSpeakTitle: 'اختر مدة المحادثة',
+                listSpeakSub: 'اختر مدة الاشتراك المناسبة لك',
                 payTitle: 'معلومات الدفع',
                 basicLabel: 'الخطة',
                 cardNumLabel: 'رقم البطاقة',
@@ -1521,20 +1883,35 @@
                 copied: '✓ تم النسخ',
                 copyToast: 'تم نسخ الرقم',
                 sendBtn: 'إرسال لقطة الشاشة',
-                note: 'بعد الدفع أرسل لقطة شاشة الإيصال عبر زر "إرسال لقطة الشاشة" — سيتم تفعيل الخطة خلال 24 ساعة.',
+                note: 'بعد الدفع أرسل لقطة شاشة الإيصال — سيتم تفعيل الخطة خلال 24 ساعة.',
                 empty: 'لا توجد خطط متاحة حالياً',
                 mockUnit: 'اختبار',
+                monthUnit: 'شهر',
                 sum: 'سوم',
-                badgeMock: 'اختبار'
+                badgeMock: 'اختبار',
+                badgeMonth: 'شهر'
             },
             turkish: {
-                heroTitle: 'Mock tarifeleri',
-                heroSub: 'Mock sınavları satın al — ödeme yap ve anında eriş',
-                balanceTitle: 'Bakiye',
+                sectionBalance: 'Bakiye',
+                sectionPlans: 'Tarifeler',
+                mockHeroTitle: 'Mock tarifeleri',
+                mockHeroSub: 'Mock sınavları satın al — ödeme yap ve anında eriş',
+                speakHeroTitle: 'Speak tarifesi',
+                speakHeroSub: 'Sınırsız konuşma — istediğin kadar partnerle görüş',
+                speakHeroActiveTitle: 'Aktif — Premium abonelik',
+                speakHeroActiveSub: 'Sınırsız erişim — detaylar için tıkla',
+                balanceTitle: 'Mock bakiyesi',
                 balanceHas: '{n} adet mockunuz var',
                 balanceZero: 'Henüz mockunuz yok',
+                subActiveHeader: 'Abonelik aktif',
+                subExpiredHeader: 'Süresi doldu',
+                subStartLabel: 'Başlangıç',
+                subEndLabel: 'Bitiş',
+                subDaysLeft: '{n} gün kaldı',
                 listTitle: 'Tarifeyi seç',
                 listSub: 'Size uygun mock sayısını seçin',
+                listSpeakTitle: 'Speak süresini seç',
+                listSpeakSub: 'Size uygun abonelik süresini seçin',
                 payTitle: 'Ödeme bilgileri',
                 basicLabel: 'Tarife',
                 cardNumLabel: 'Kart numarası',
@@ -1544,20 +1921,35 @@
                 copied: '✓ Kopyalandı',
                 copyToast: 'Kart numarası kopyalandı',
                 sendBtn: 'Ekran görüntüsünü gönder',
-                note: 'Ödemeden sonra fişin ekran görüntüsünü "Ekran görüntüsünü gönder" düğmesiyle iletin — 24 saat içinde aktif edilecektir.',
+                note: 'Ödemeden sonra fişin ekran görüntüsünü gönderin — 24 saat içinde aktif edilecektir.',
                 empty: 'Şu anda tarife bulunmuyor',
                 mockUnit: 'mock',
+                monthUnit: 'ay',
                 sum: 'so\'m',
-                badgeMock: 'mock'
+                badgeMock: 'mock',
+                badgeMonth: 'ay'
             },
             english: {
-                heroTitle: 'Mock plans',
-                heroSub: 'Buy mock exams — pay and get instant access',
-                balanceTitle: 'Your balance',
+                sectionBalance: 'Balance',
+                sectionPlans: 'Plans',
+                mockHeroTitle: 'Mock plans',
+                mockHeroSub: 'Buy mock exams — pay and get instant access',
+                speakHeroTitle: 'Speak plan',
+                speakHeroSub: 'Unlimited calls — talk with partners without time limit',
+                speakHeroActiveTitle: 'Active — Premium subscription',
+                speakHeroActiveSub: 'Unlimited access — tap to view details',
+                balanceTitle: 'Mock balance',
                 balanceHas: 'You have {n} mocks',
                 balanceZero: 'You have no mocks yet',
+                subActiveHeader: 'Subscription active',
+                subExpiredHeader: 'Expired',
+                subStartLabel: 'Start',
+                subEndLabel: 'End',
+                subDaysLeft: '{n} days left',
                 listTitle: 'Choose a plan',
                 listSub: 'Pick the number of mocks that suits you',
+                listSpeakTitle: 'Choose Speak duration',
+                listSpeakSub: 'Pick a subscription length that suits you',
                 payTitle: 'Payment details',
                 basicLabel: 'Plan',
                 cardNumLabel: 'Card number',
@@ -1567,11 +1959,13 @@
                 copied: '✓ Copied',
                 copyToast: 'Card number copied',
                 sendBtn: 'Send screenshot',
-                note: 'After paying, send the receipt screenshot via "Send screenshot" — activation within 24 hours.',
+                note: 'After paying, send the receipt screenshot — activation within 24 hours.',
                 empty: 'No plans available right now',
                 mockUnit: 'mock',
+                monthUnit: 'month',
                 sum: 'UZS',
-                badgeMock: 'mock'
+                badgeMock: 'mock',
+                badgeMonth: 'mo'
             }
         };
 
@@ -1585,7 +1979,9 @@
         };
 
         var loadedTariffs = [];
+        var loadedSpeakTariffs = [];
         var selectedTariff = null;
+        var selectedTariffType = 'mock'; // 'mock' | 'speak'
 
         function formatSom(price) {
             var s = String(price || 0);
@@ -1598,6 +1994,11 @@
         function buildPremiumContent(lang) {
             var pl = premiumLabels[lang] || premiumLabels.english;
             var h = '<div class="premium-wrap">';
+
+            // Subscription status placeholder (async yuklanadi)
+            h += '<div id="subStatusWrap"></div>';
+
+            h += '<div class="section-title">' + pl.sectionBalance + '</div>';
             // Balance card (yuklanayotgan payt default)
             h += '<div class="balance-card" id="balanceCard">';
             h += '<div class="balance-icon-wrap">🎫</div>';
@@ -1606,20 +2007,100 @@
             h += '<div class="balance-value balance-loading" id="balanceValue">...</div>';
             h += '</div>';
             h += '</div>';
-            // Hero card (Mock tarifi)
-            h += '<div class="premium-hero" onclick="openTariffsPage()">';
+
+            h += '<div class="section-title">' + pl.sectionPlans + '</div>';
+
+            // Mock hero
+            h += '<div class="premium-hero" onclick="openTariffsPage(\'mock\')">';
             h += '<div class="premium-hero-icon">⭐</div>';
             h += '<div class="premium-hero-text">';
-            h += '<div class="premium-hero-title">' + pl.heroTitle + '</div>';
-            h += '<div class="premium-hero-sub">' + pl.heroSub + '</div>';
+            h += '<div class="premium-hero-title">' + pl.mockHeroTitle + '</div>';
+            h += '<div class="premium-hero-sub">' + pl.mockHeroSub + '</div>';
             h += '</div>';
             h += '<div class="premium-hero-arrow">›</div>';
             h += '</div>';
+
+            // Speak hero (yangi)
+            h += '<div class="premium-hero speak" onclick="openTariffsPage(\'speak\')" id="speakHero">';
+            h += '<div class="premium-hero-icon">🎙️</div>';
+            h += '<div class="premium-hero-text">';
+            h += '<div class="premium-hero-title" id="speakHeroTitle">' + pl.speakHeroTitle + '</div>';
+            h += '<div class="premium-hero-sub" id="speakHeroSub">' + pl.speakHeroSub + '</div>';
+            h += '</div>';
+            h += '<div class="premium-hero-arrow">›</div>';
             h += '</div>';
 
-            // Balansni yuklash (async)
+            h += '</div>';
+
+            // Balansni va subscription'ni yuklash (async)
             loadMockBalance(lang);
+            loadSubscription(lang);
             return h;
+        }
+
+        function loadSubscription(lang) {
+            var pl = premiumLabels[lang] || premiumLabels.english;
+            var userId = tgUser ? tgUser.id : 0;
+            if (!userId) {
+                renderSubscription(null, pl);
+                return;
+            }
+            fetch('/api/subscription/' + userId)
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    renderSubscription(data && data.subscription ? data.subscription : null, pl);
+                })
+                .catch(function() {
+                    renderSubscription(null, pl);
+                });
+        }
+
+        function renderSubscription(sub, pl) {
+            var wrap = document.getElementById('subStatusWrap');
+            if (!wrap) return;
+            if (sub && sub.active) {
+                var daysText = pl.subDaysLeft.replace('{n}', sub.days_left);
+                var h = '<div class="sub-status-card">';
+                h += '<div class="sub-status-header"><span class="crown">👑</span>' + pl.subActiveHeader + '</div>';
+                h += '<div class="sub-status-title">' + pl.speakHeroActiveTitle + '</div>';
+                h += '<div class="sub-status-dates">';
+                h += '<div class="sub-date-block"><div class="sub-date-label">' + pl.subStartLabel + '</div><div class="sub-date-value">' + formatDateHuman(sub.start_date) + '</div></div>';
+                h += '<div class="sub-date-block"><div class="sub-date-label">' + pl.subEndLabel + '</div><div class="sub-date-value">' + formatDateHuman(sub.end_date) + '</div></div>';
+                h += '</div>';
+                h += '<div class="sub-days-left">' + daysText + '</div>';
+                h += '</div>';
+                wrap.innerHTML = h;
+                // Speak hero ham "premium" holatiga o'zgaradi
+                var sh = document.getElementById('speakHero');
+                if (sh) {
+                    sh.classList.add('speak-premium');
+                    sh.classList.remove('speak');
+                }
+                var sht = document.getElementById('speakHeroTitle');
+                var shs = document.getElementById('speakHeroSub');
+                if (sht) sht.textContent = pl.speakHeroActiveTitle;
+                if (shs) shs.textContent = pl.speakHeroActiveSub;
+            } else if (sub) {
+                // Expired
+                var h2 = '<div class="sub-status-card expired">';
+                h2 += '<div class="sub-status-header">⏰ ' + pl.subExpiredHeader + '</div>';
+                h2 += '<div class="sub-status-title">' + formatDateHuman(sub.end_date) + '</div>';
+                h2 += '</div>';
+                wrap.innerHTML = h2;
+            } else {
+                wrap.innerHTML = '';
+            }
+        }
+
+        function formatDateHuman(isoStr) {
+            if (!isoStr) return '—';
+            // YYYY-MM-DD format
+            var parts = String(isoStr).split('-');
+            if (parts.length !== 3) return isoStr;
+            var months = ['Yan', 'Fev', 'Mar', 'Apr', 'May', 'Iyn', 'Iyl', 'Avg', 'Sen', 'Okt', 'Noy', 'Dek'];
+            var idx = parseInt(parts[1], 10) - 1;
+            var m = months[idx] || parts[1];
+            return parts[2] + ' ' + m + ' ' + parts[0];
         }
 
         function loadMockBalance(lang) {
@@ -1655,31 +2136,41 @@
             }
         }
 
-        function openTariffsPage() {
+        function openTariffsPage(type) {
+            selectedTariffType = (type === 'speak') ? 'speak' : 'mock';
             var lang = currentLang || 'english';
             var pl = premiumLabels[lang] || premiumLabels.english;
             var data = langs[lang];
 
-            // Skeleton avval
+            var title = selectedTariffType === 'speak' ? pl.listSpeakTitle : pl.listTitle;
+            var sub = selectedTariffType === 'speak' ? pl.listSpeakSub : pl.listSub;
+
+            // Skeleton
             var h = '<div class="' + data.theme + '">';
             h += '<div class="nav-header"><button class="back-btn" onclick="backFromTariffs()">' + backSvg + '</button>';
-            h += '<div class="nav-title">' + pl.listTitle + '</div></div>';
-            h += '<div class="level-subtitle">' + pl.listSub + '</div>';
+            h += '<div class="nav-title">' + title + '</div></div>';
+            h += '<div class="level-subtitle">' + sub + '</div>';
             h += '<div class="tariffs-list" id="tariffsList">';
             h += '<div class="tariff-empty">⏳</div>';
             h += '</div></div>';
             document.getElementById('tariffsContent').innerHTML = h;
             navigate('progressPage', 'tariffsPage', true);
 
-            // Yuklash
-            fetch('/api/tariffs')
+            var endpoint = selectedTariffType === 'speak' ? '/api/speak_tariffs' : '/api/tariffs';
+            fetch(endpoint)
                 .then(function(r) { return r.json(); })
                 .then(function(res) {
-                    loadedTariffs = (res && res.tariffs) ? res.tariffs : [];
+                    var tariffs = (res && res.tariffs) ? res.tariffs : [];
+                    if (selectedTariffType === 'speak') {
+                        loadedSpeakTariffs = tariffs;
+                    } else {
+                        loadedTariffs = tariffs;
+                    }
                     renderTariffsList(lang);
                 })
                 .catch(function() {
-                    loadedTariffs = [];
+                    if (selectedTariffType === 'speak') loadedSpeakTariffs = [];
+                    else loadedTariffs = [];
                     renderTariffsList(lang);
                 });
         }
@@ -1688,19 +2179,25 @@
             var pl = premiumLabels[lang] || premiumLabels.english;
             var listEl = document.getElementById('tariffsList');
             if (!listEl) return;
-            if (!loadedTariffs.length) {
+            var isSpeak = selectedTariffType === 'speak';
+            var items = isSpeak ? loadedSpeakTariffs : loadedTariffs;
+            if (!items.length) {
                 listEl.innerHTML = '<div class="tariff-empty">' + pl.empty + '</div>';
                 return;
             }
             var h = '';
-            for (var i = 0; i < loadedTariffs.length; i++) {
-                var t = loadedTariffs[i];
-                var popular = (t.mock_count >= 3) ? ' popular' : '';
+            for (var i = 0; i < items.length; i++) {
+                var t = items[i];
+                var unit = isSpeak ? pl.monthUnit : pl.mockUnit;
+                var count = isSpeak ? t.months : t.mock_count;
+                var popularVal = isSpeak ? 2 : 3;
+                var popular = (count >= popularVal) ? ' popular' : '';
+                var icon = isSpeak ? '🎙️' : '⭐';
                 h += '<div class="tariff-card' + popular + '" onclick="openPaymentPage(' + t.id + ')" style="animation:slideUp .4s ease ' + (i * 0.08) + 's both">';
                 h += '<div class="tariff-card-header">';
-                h += '<div class="tariff-card-icon">⭐</div>';
+                h += '<div class="tariff-card-icon">' + icon + '</div>';
                 h += '<div><div class="tariff-card-title">' + escapeHtml(t.title) + '</div>';
-                h += '<div class="tariff-card-subtitle">' + t.mock_count + ' ' + pl.mockUnit + '</div></div>';
+                h += '<div class="tariff-card-subtitle">' + count + ' ' + unit + '</div></div>';
                 h += '</div>';
                 h += '<div class="tariff-card-price-row">';
                 h += '<div class="tariff-card-price">' + formatSom(t.price) + '</div>';
@@ -1725,9 +2222,11 @@
         }
 
         function openPaymentPage(tariffId) {
+            var isSpeak = selectedTariffType === 'speak';
+            var source = isSpeak ? loadedSpeakTariffs : loadedTariffs;
             var t = null;
-            for (var i = 0; i < loadedTariffs.length; i++) {
-                if (loadedTariffs[i].id === tariffId) { t = loadedTariffs[i]; break; }
+            for (var i = 0; i < source.length; i++) {
+                if (source[i].id === tariffId) { t = source[i]; break; }
             }
             if (!t) return;
             selectedTariff = t;
@@ -1735,6 +2234,9 @@
             var lang = currentLang || 'english';
             var pl = premiumLabels[lang] || premiumLabels.english;
             var data = langs[lang];
+
+            var badgeCount = isSpeak ? t.months : t.mock_count;
+            var badgeUnit = isSpeak ? pl.badgeMonth : pl.badgeMock;
 
             var h = '<div class="' + data.theme + '">';
             h += '<div class="nav-header"><button class="back-btn" onclick="backFromPayment()">' + backSvg + '</button>';
@@ -1747,7 +2249,7 @@
             h += '<div class="pay-title-label">' + pl.basicLabel + '</div>';
             h += '<div class="pay-title-name">' + escapeHtml(t.title) + '</div>';
             h += '</div>';
-            h += '<div class="pay-title-mock">' + t.mock_count + ' ' + pl.badgeMock + '</div>';
+            h += '<div class="pay-title-mock">' + badgeCount + ' ' + badgeUnit + '</div>';
             h += '</div>';
 
             // Card number
@@ -1850,9 +2352,13 @@
 
             var h = '<div class="' + data.theme + ' main-page">';
 
-            // Back button
-            h += '<div class="nav-header"><button class="back-btn" onclick="navigate(\'progressPage\',\'homePage\',false)">' + backSvg + '</button>';
-            h += '<div class="nav-title">' + data.langName + ' — ' + badge + '</div></div>';
+            // Back + title + refresh
+            var refreshSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>';
+            h += '<div class="nav-header">';
+            h += '<button class="back-btn" onclick="navigate(\'progressPage\',\'homePage\',false)">' + backSvg + '</button>';
+            h += '<div class="nav-title">' + data.langName + ' — ' + badge + '</div>';
+            h += '<button class="refresh-btn" id="refreshBtn" onclick="refreshCurrentTab(this)" aria-label="Refresh">' + refreshSvg + '</button>';
+            h += '</div>';
 
             // Talk tab (active by default)
             h += '<div class="tab-content active" id="tab-talk">';
@@ -1891,6 +2397,8 @@
 
             // Slider'ni ishga tushirish
             setTimeout(initRangeSlider, 100);
+            // Usage banner ham yuklash (Talk tab default active)
+            loadUsageBanner(lang);
         }
     </script>
 </body>

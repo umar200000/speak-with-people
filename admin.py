@@ -20,6 +20,13 @@ from database import (
     set_user_mocks,
     adjust_user_mocks,
     LANGUAGES,
+    get_all_speak_tariffs,
+    add_speak_tariff,
+    update_speak_tariff,
+    delete_speak_tariff,
+    grant_subscription,
+    remove_subscription,
+    get_user_subscription,
 )
 
 # ===== AUTH =====
@@ -127,10 +134,12 @@ tr:hover td { background: #fafbff; }
 .btn-remove:hover { background: #e8860a; }
 .empty { text-align: center; padding: 60px; color: #999; font-size: 15px; }
 .lang-cell { display: flex; gap: 6px; flex-wrap: wrap; }
-.lang-pill { background: #f2f2f7; border-radius: 10px; padding: 6px 10px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
-.lang-pill .flag { font-size: 14px; }
-.lang-pill .count { color: #34c759; font-weight: 800; }
+.lang-pill { background: #f2f2f7; border-radius: 10px; padding: 6px 10px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; line-height: 1; }
+.lang-pill .flag { width: 18px; height: 18px; display: inline-block; vertical-align: middle; }
+.lang-pill .flag svg, .lang-pill .flag img { width: 18px; height: 18px; display: block; border-radius: 3px; }
+.lang-pill .count { color: #34c759; font-weight: 800; font-size: 13px; }
 .lang-pill.zero .count { color: #999; }
+.lang-pill .lang-code { color: #555; font-weight: 700; font-size: 11px; letter-spacing: 0.3px; }
 .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
 .modal-overlay.active { display: flex; }
 .modal { background: white; border-radius: 16px; padding: 26px; width: 100%; max-width: 480px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); max-height: 92vh; overflow-y: auto; }
@@ -156,6 +165,14 @@ tr:hover td { background: #fafbff; }
 .btn-confirm-orange { background: #ff9500; color: white; }
 .lang-info-row { background: #f9f9fc; border-radius: 10px; padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; font-size: 13px; }
 .lang-info-row strong { color: #333; }
+.sub-badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 10px; font-size: 12px; font-weight: 700; background: #f2f2f7; color: #555; }
+.sub-badge.active { background: linear-gradient(135deg, #34c759, #30b050); color: white; }
+.sub-badge.expired { background: #fde2e2; color: #c0392b; }
+.sub-dates { font-size: 11px; color: #888; margin-top: 4px; font-weight: 500; }
+.btn-speak { background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; padding: 7px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
+.btn-speak:hover { opacity: 0.9; }
+.btn-speak-rm { background: #ff9500; color: white; border: none; padding: 7px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600; }
+.btn-speak-rm:hover { background: #e8860a; }
 @media (max-width: 820px) {
     body { flex-direction: column; }
     .sidebar { width: 100%; height: auto; position: static; flex-direction: row; overflow-x: auto; }
@@ -172,8 +189,9 @@ tr:hover td { background: #fafbff; }
 def sidebar_html(active):
     items = [
         ("/admin/", "users", "&#128101;", "Foydalanuvchilar"),
-        ("/admin/tariffs", "tariffs", "&#11088;", "Tariflar"),
-        ("/admin/mocks", "mocks", "&#127919;", "Mock berish"),
+        ("/admin/tariffs", "tariffs", "&#11088;", "Mock tariflar"),
+        ("/admin/speak_tariffs", "speak_tariffs", "&#127911;", "Speak tariflar"),
+        ("/admin/mocks", "mocks", "&#127919;", "Berish / Olib tashlash"),
     ]
     html = '<div class="sidebar"><div class="sidebar-logo">Speak Bot</div><div class="sidebar-menu">'
     for href, key, icon, label in items:
@@ -429,11 +447,11 @@ def tariffs_page():
 
     body = f"""
 <div class="page-header">
-    <div class="page-title">Tariflar</div>
+    <div class="page-title">Mock tariflar</div>
     <button class="btn-primary" onclick="openAdd()">+ Yangi tarif</button>
 </div>
 <div class="card">
-    <div class="card-header">Tariflar ro'yxati</div>
+    <div class="card-header">Mock tariflari ro'yxati</div>
     {table}
 </div>
 
@@ -531,11 +549,181 @@ def tariffs_delete(tariff_id: int):
     return RedirectResponse(url="/admin/tariffs", status_code=303)
 
 
+# ===== SPEAK TARIFFS =====
+@app.get("/speak_tariffs", response_class=HTMLResponse)
+def speak_tariffs_page():
+    tariffs = get_all_speak_tariffs(active_only=False)
+    if not tariffs:
+        table = '<div class="empty">Hozircha Speak tariflari yo\'q. Yangi tarif qo\'shing.</div>'
+    else:
+        rows = ""
+        for i, t in enumerate(tariffs, 1):
+            status = (
+                '<span class="badge badge-active">Faol</span>'
+                if t["is_active"]
+                else '<span class="badge badge-inactive">Faol emas</span>'
+            )
+            title_js = _esc(t["title"])
+            desc_js = _esc(t.get("description") or "")
+            rows += f"""
+            <tr>
+                <td>{i}</td>
+                <td><strong>{_esc(t['title'])}</strong></td>
+                <td>{t['months']} oy</td>
+                <td>{format_price(t['price'])}</td>
+                <td>{_esc(t.get('description') or '—')}</td>
+                <td>{status}</td>
+                <td>{t.get('sort_order', 0)}</td>
+                <td>
+                    <div class="actions">
+                        <button class="btn-edit" onclick="openEdit({t['id']}, '{title_js}', {t['months']}, {t['price']}, '{desc_js}', {t['is_active']}, {t.get('sort_order', 0)})">Tahrir</button>
+                        <button class="btn-delete" onclick="confirmDelete({t['id']})">O'chirish</button>
+                    </div>
+                </td>
+            </tr>"""
+        table = f"""
+        <table>
+            <tr><th>#</th><th>Nomi</th><th>Muddat</th><th>Narxi</th><th>Tavsif</th><th>Holat</th><th>Tartib</th><th>Amal</th></tr>
+            {rows}
+        </table>"""
+
+    body = f"""
+<div class="page-header">
+    <div class="page-title">Speak tariflar</div>
+    <button class="btn-primary" onclick="openAdd()">+ Yangi Speak tarif</button>
+</div>
+<div class="card">
+    <div class="card-header">Speak tariflari ro'yxati (oylik obuna — barcha tillarda ishlaydi)</div>
+    {table}
+</div>
+
+<div class="modal-overlay" id="formModal">
+    <div class="modal">
+        <h3 id="formTitle">Yangi Speak tarif</h3>
+        <form id="tariffForm" method="POST" action="/admin/speak_tariffs/save">
+            <input type="hidden" name="tariff_id" id="fId" value="">
+            <div class="form-group"><label>Tarif nomi</label><input type="text" name="title" id="fTitle" required placeholder="1 oylik Speak"></div>
+            <div class="form-row">
+                <div class="form-group"><label>Muddat (oy)</label><input type="number" name="months" id="fMonths" required min="1" value="1"></div>
+                <div class="form-group"><label>Narxi (so'm)</label><input type="number" name="price" id="fPrice" required min="0" value="49000"></div>
+            </div>
+            <div class="form-group"><label>Tavsif</label><textarea name="description" id="fDesc" rows="2" placeholder="Ixtiyoriy"></textarea></div>
+            <div class="form-row">
+                <div class="form-group"><label>Tartib</label><input type="number" name="sort_order" id="fSort" value="0"></div>
+                <div class="form-group"><label>Holat</label><select name="is_active" id="fActive"><option value="1">Faol</option><option value="0">Faol emas</option></select></div>
+            </div>
+            <div class="modal-buttons">
+                <button type="button" class="btn-cancel" onclick="closeForm()">Bekor qilish</button>
+                <button type="submit" class="btn-confirm">Saqlash</button>
+            </div>
+        </form>
+    </div>
+</div>
+<div class="modal-overlay" id="deleteModal">
+    <div class="modal" style="max-width: 400px; text-align: center;">
+        <h3>O'chirishni tasdiqlang</h3>
+        <p>Bu Speak tarifni o'chirishni xohlaysizmi?</p>
+        <div class="modal-buttons" style="justify-content: center;">
+            <button class="btn-cancel" onclick="closeDelete()">Bekor qilish</button>
+            <a id="deleteLink" href="#" class="btn-confirm-del">O'chirish</a>
+        </div>
+    </div>
+</div>
+
+<script>
+function openAdd() {{
+    document.getElementById('formTitle').textContent = "Yangi Speak tarif";
+    document.getElementById('fId').value = '';
+    document.getElementById('fTitle').value = '';
+    document.getElementById('fMonths').value = '1';
+    document.getElementById('fPrice').value = '49000';
+    document.getElementById('fDesc').value = '';
+    document.getElementById('fSort').value = '0';
+    document.getElementById('fActive').value = '1';
+    document.getElementById('formModal').classList.add('active');
+}}
+function openEdit(id, title, months, price, desc, active, sort) {{
+    document.getElementById('formTitle').textContent = "Speak tarifni tahrirlash";
+    document.getElementById('fId').value = id;
+    document.getElementById('fTitle').value = title;
+    document.getElementById('fMonths').value = months;
+    document.getElementById('fPrice').value = price;
+    document.getElementById('fDesc').value = desc;
+    document.getElementById('fSort').value = sort;
+    document.getElementById('fActive').value = active;
+    document.getElementById('formModal').classList.add('active');
+}}
+function closeForm() {{ document.getElementById('formModal').classList.remove('active'); }}
+function confirmDelete(id) {{
+    document.getElementById('deleteLink').href = '/admin/speak_tariffs/delete/' + id;
+    document.getElementById('deleteModal').classList.add('active');
+}}
+function closeDelete() {{ document.getElementById('deleteModal').classList.remove('active'); }}
+document.getElementById('formModal').addEventListener('click', function(e) {{ if (e.target === this) closeForm(); }});
+document.getElementById('deleteModal').addEventListener('click', function(e) {{ if (e.target === this) closeDelete(); }});
+</script>
+"""
+    return layout("speak_tariffs", body)
+
+
+@app.post("/speak_tariffs/save")
+def speak_tariffs_save(
+    tariff_id: str = Form(""),
+    title: str = Form(...),
+    months: int = Form(...),
+    price: int = Form(...),
+    description: str = Form(""),
+    is_active: int = Form(1),
+    sort_order: int = Form(0),
+):
+    if tariff_id and tariff_id.strip():
+        update_speak_tariff(
+            int(tariff_id), title, months, price, description, is_active, sort_order
+        )
+    else:
+        add_speak_tariff(title, months, price, description, is_active, sort_order)
+    return RedirectResponse(url="/admin/speak_tariffs", status_code=303)
+
+
+@app.get("/speak_tariffs/delete/{tariff_id}")
+def speak_tariffs_delete(tariff_id: int):
+    delete_speak_tariff(tariff_id)
+    return RedirectResponse(url="/admin/speak_tariffs", status_code=303)
+
+
 # ===== MOCK BERISH =====
+# Inline SVG flaglar (Windows browserlarda flag emoji render qilmaydi)
+FLAG_SVG = {
+    "arabic": (
+        '<svg class="flag-svg" viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg">'
+        '<rect width="60" height="40" fill="#007A3D"/>'
+        '<path d="M18 16c0-2 2-4 4-4h16c2 0 4 2 4 4v8c0 2-2 4-4 4H22c-2 0-4-2-4-4v-8z" fill="#fff" opacity="0.9"/>'
+        '<text x="30" y="25" font-family="Arial" font-size="8" fill="#007A3D" text-anchor="middle" font-weight="bold">العربية</text>'
+        '</svg>'
+    ),
+    "turkish": (
+        '<svg class="flag-svg" viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg">'
+        '<rect width="60" height="40" fill="#E30A17"/>'
+        '<circle cx="22" cy="20" r="9" fill="#fff"/>'
+        '<circle cx="25" cy="20" r="7" fill="#E30A17"/>'
+        '<polygon points="32,20 38,17.5 36,21 38,24.5" fill="#fff"/>'
+        '</svg>'
+    ),
+    "english": (
+        '<svg class="flag-svg" viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg">'
+        '<rect width="60" height="40" fill="#012169"/>'
+        '<path d="M0,0 L60,40 M60,0 L0,40" stroke="#fff" stroke-width="6"/>'
+        '<path d="M0,0 L60,40 M60,0 L0,40" stroke="#C8102E" stroke-width="3"/>'
+        '<path d="M30,0 V40 M0,20 H60" stroke="#fff" stroke-width="10"/>'
+        '<path d="M30,0 V40 M0,20 H60" stroke="#C8102E" stroke-width="6"/>'
+        '</svg>'
+    ),
+}
+
 LANG_META = {
-    "arabic": {"flag": "🕌", "name": "Arabcha"},
-    "turkish": {"flag": "🇹🇷", "name": "Turkcha"},
-    "english": {"flag": "🇬🇧", "name": "Inglizcha"},
+    "arabic": {"code": "AR", "name": "Arabcha"},
+    "turkish": {"code": "TR", "name": "Turkcha"},
+    "english": {"code": "EN", "name": "Inglizcha"},
 }
 
 
@@ -543,11 +731,13 @@ LANG_META = {
 def mocks_page():
     users = get_all_users_with_mocks()
     tariffs = get_all_tariffs(active_only=True)
+    speak_tariffs = get_all_speak_tariffs(active_only=True)
 
-    total_mocks = sum(
-        sum(u["mocks"].values()) for u in users
-    )
+    total_mocks = sum(sum(u["mocks"].values()) for u in users)
     active_holders = sum(1 for u in users if sum(u["mocks"].values()) > 0)
+    premium_count = sum(
+        1 for u in users if u.get("subscription") and u["subscription"]["active"]
+    )
 
     if not users:
         table = '<div class="empty">Hozircha foydalanuvchilar yo\'q</div>'
@@ -572,10 +762,31 @@ def mocks_page():
                 meta = LANG_META[lang]
                 cnt = mocks.get(lang, 0)
                 zero_cls = " zero" if cnt == 0 else ""
-                pills += f'<span class="lang-pill{zero_cls}"><span class="flag">{meta["flag"]}</span> <span class="count">{cnt}</span></span>'
+                pills += (
+                    f'<span class="lang-pill{zero_cls}">'
+                    f'<span class="flag">{FLAG_SVG[lang]}</span>'
+                    f'<span class="lang-code">{meta["code"]}</span>'
+                    f'<span class="count">{cnt}</span>'
+                    f'</span>'
+                )
+
+            sub = u.get("subscription")
+            if sub and sub["active"]:
+                sub_html = (
+                    f'<span class="sub-badge active">PREMIUM · {sub["days_left"]} kun</span>'
+                    f'<div class="sub-dates">{sub["start_date"]} → {sub["end_date"]}</div>'
+                )
+            elif sub:
+                sub_html = (
+                    f'<span class="sub-badge expired">Tugagan</span>'
+                    f'<div class="sub-dates">{sub["end_date"]}</div>'
+                )
+            else:
+                sub_html = '<span class="sub-badge">Yo\'q</span>'
 
             first_name_js = _esc(u["first_name"] or "").replace("`", "")
             username_js = _esc(username).replace("`", "")
+            has_sub_js = "true" if (sub and sub["active"]) else "false"
             rows += f"""
             <tr>
                 <td>{i}</td>
@@ -590,28 +801,37 @@ def mocks_page():
                 </td>
                 <td>{_esc(u['phone'])}</td>
                 <td><div class="lang-cell">{pills}</div></td>
+                <td>{sub_html}</td>
                 <td>
                     <div class="actions">
-                        <button class="btn-give" onclick="openGive({u['telegram_id']}, '{first_name_js}', '{username_js}', {mocks['arabic']}, {mocks['turkish']}, {mocks['english']})">+ Mock berish</button>
-                        <button class="btn-remove" onclick="openRemove({u['telegram_id']}, '{first_name_js}', {mocks['arabic']}, {mocks['turkish']}, {mocks['english']})">− Olib tashlash</button>
+                        <button class="btn-give" onclick="openGive({u['telegram_id']}, '{first_name_js}', '{username_js}', {mocks['arabic']}, {mocks['turkish']}, {mocks['english']})">+ Mock</button>
+                        <button class="btn-remove" onclick="openRemove({u['telegram_id']}, '{first_name_js}', {mocks['arabic']}, {mocks['turkish']}, {mocks['english']})">− Mock</button>
+                        <button class="btn-speak" onclick="openSpeakGive({u['telegram_id']}, '{first_name_js}')">+ Speak</button>
+                        <button class="btn-speak-rm" onclick="openSpeakRemove({u['telegram_id']}, '{first_name_js}', {has_sub_js})">− Speak</button>
                     </div>
                 </td>
             </tr>"""
         table = f"""
         <table>
-            <tr><th>#</th><th>Foydalanuvchi</th><th>Telefon</th><th>Mocklar</th><th>Amal</th></tr>
+            <tr><th>#</th><th>Foydalanuvchi</th><th>Telefon</th><th>Mocklar</th><th>Speak obuna</th><th>Amal</th></tr>
             {rows}
         </table>"""
 
-    # Tariff options JS
+    # Mock tariff options JS
     tariff_options = ""
     for t in tariffs:
         tariff_options += f'<option value="{t["mock_count"]}">{_esc(t["title"])} (+{t["mock_count"]} mock)</option>'
     tariff_options_html = tariff_options if tariff_options else '<option value="0">Tarif topilmadi</option>'
 
+    # Speak tariff options
+    speak_options = ""
+    for t in speak_tariffs:
+        speak_options += f'<option value="{t["months"]}">{_esc(t["title"])} ({t["months"]} oy)</option>'
+    speak_options_html = speak_options if speak_options else '<option value="1">Speak tarif topilmadi — 1 oy</option>'
+
     body = f"""
 <div class="page-header">
-    <div class="page-title">Mock berish</div>
+    <div class="page-title">Berish / Olib tashlash</div>
 </div>
 <div class="stats">
     <div class="stat-card mocks">
@@ -619,8 +839,8 @@ def mocks_page():
         <div class="label">Jami berilgan mocklar</div>
     </div>
     <div class="stat-card">
-        <div class="number">{active_holders}</div>
-        <div class="label">Mocklari bor foydalanuvchilar</div>
+        <div class="number">{premium_count}</div>
+        <div class="label">Speak premium foydalanuvchilar</div>
     </div>
     <div class="stat-card">
         <div class="number">{len(users)}</div>
@@ -628,7 +848,7 @@ def mocks_page():
     </div>
 </div>
 <div class="card">
-    <div class="card-header">Foydalanuvchilar va mocklari</div>
+    <div class="card-header">Foydalanuvchilar · mock balansi · Speak obuna</div>
     {table}
 </div>
 
@@ -642,9 +862,9 @@ def mocks_page():
             <div class="form-group">
                 <label>Til</label>
                 <select name="language" id="giveLang" onchange="updateGiveCurrent()">
-                    <option value="arabic">🕌 Arabcha</option>
-                    <option value="turkish">🇹🇷 Turkcha</option>
-                    <option value="english">🇬🇧 Inglizcha</option>
+                    <option value="arabic">Arabcha (AR)</option>
+                    <option value="turkish">Turkcha (TR)</option>
+                    <option value="english">Inglizcha (EN)</option>
                 </select>
             </div>
             <div class="lang-info-row">Joriy balans: <strong id="giveCurrent">0</strong> mock</div>
@@ -690,9 +910,9 @@ def mocks_page():
             <div class="form-group">
                 <label>Til</label>
                 <select name="language" id="removeLang" onchange="updateRemoveCurrent()">
-                    <option value="arabic">🕌 Arabcha</option>
-                    <option value="turkish">🇹🇷 Turkcha</option>
-                    <option value="english">🇬🇧 Inglizcha</option>
+                    <option value="arabic">Arabcha (AR)</option>
+                    <option value="turkish">Turkcha (TR)</option>
+                    <option value="english">Inglizcha (EN)</option>
                 </select>
             </div>
             <div class="lang-info-row">Joriy balans: <strong id="removeCurrent">0</strong> mock</div>
@@ -762,9 +982,119 @@ function updateRemoveCurrent() {{
 
 document.getElementById('giveModal').addEventListener('click', function(e) {{ if (e.target === this) closeGive(); }});
 document.getElementById('removeModal').addEventListener('click', function(e) {{ if (e.target === this) closeRemove(); }});
+
+// SPEAK GIVE
+function openSpeakGive(tid, firstName) {{
+    document.getElementById('speakGiveTid').value = tid;
+    document.getElementById('speakGiveUserInfo').innerHTML = '<strong>' + firstName + '</strong>';
+    document.getElementById('speakGiveMode').value = 'tariff';
+    switchSpeakGiveTab('tariff');
+    document.getElementById('speakGiveModal').classList.add('active');
+}}
+function closeSpeakGive() {{ document.getElementById('speakGiveModal').classList.remove('active'); }}
+function switchSpeakGiveTab(tab) {{
+    document.getElementById('speakGiveMode').value = tab;
+    var tabs = document.querySelectorAll('#speakGiveModal .modal-tab');
+    tabs[0].classList.toggle('active', tab === 'tariff');
+    tabs[1].classList.toggle('active', tab === 'manual');
+    document.getElementById('speakGiveTabTariff').classList.toggle('active', tab === 'tariff');
+    document.getElementById('speakGiveTabManual').classList.toggle('active', tab === 'manual');
+}}
+
+// SPEAK REMOVE
+function openSpeakRemove(tid, firstName, hasSub) {{
+    if (!hasSub) {{
+        alert(firstName + ' foydalanuvchisida faol Speak obuna yo\\'q.');
+        return;
+    }}
+    document.getElementById('speakRemoveTid').value = tid;
+    document.getElementById('speakRemoveName').innerHTML = '<strong>' + firstName + '</strong>';
+    document.getElementById('speakRemoveModal').classList.add('active');
+}}
+function closeSpeakRemove() {{ document.getElementById('speakRemoveModal').classList.remove('active'); }}
+
+document.getElementById('speakGiveModal').addEventListener('click', function(e) {{ if (e.target === this) closeSpeakGive(); }});
+document.getElementById('speakRemoveModal').addEventListener('click', function(e) {{ if (e.target === this) closeSpeakRemove(); }});
 </script>
+
+<!-- SPEAK GIVE MODAL -->
+<div class="modal-overlay" id="speakGiveModal">
+    <div class="modal">
+        <h3>+ Speak obuna berish</h3>
+        <p id="speakGiveUserInfo" style="margin-bottom:12px;"></p>
+        <form method="POST" action="/admin/subscription/grant">
+            <input type="hidden" name="telegram_id" id="speakGiveTid">
+            <div class="lang-info-row">
+                <span>Eslatma:</span>
+                <strong style="color:#667eea;">Barcha 3 tilda ishlaydi</strong>
+            </div>
+            <div class="modal-tabs">
+                <button type="button" class="modal-tab active" onclick="switchSpeakGiveTab('tariff')">Tarif bo'yicha</button>
+                <button type="button" class="modal-tab" onclick="switchSpeakGiveTab('manual')">Qo'lda (oy)</button>
+            </div>
+            <div class="modal-tab-content active" id="speakGiveTabTariff">
+                <div class="form-group">
+                    <label>Speak tarifni tanlang</label>
+                    <select name="tariff_months" id="speakGiveTariff">
+                        {speak_options_html}
+                    </select>
+                </div>
+            </div>
+            <div class="modal-tab-content" id="speakGiveTabManual">
+                <div class="form-group">
+                    <label>Oy soni</label>
+                    <input type="number" name="manual_months" id="speakGiveManual" min="1" max="36" value="1">
+                </div>
+            </div>
+            <input type="hidden" name="mode" id="speakGiveMode" value="tariff">
+            <div style="background:#f0f5ff; border-radius:10px; padding:10px 12px; margin-top:12px; font-size:12px; color:#667eea; line-height:1.5;">
+                ℹ️ Agar foydalanuvchida faol obuna bo'lsa — mavjud sanadan davom ettiriladi.
+                Aks holda bugungi sanadan boshlab hisoblanadi.
+            </div>
+            <div class="modal-buttons">
+                <button type="button" class="btn-cancel" onclick="closeSpeakGive()">Bekor qilish</button>
+                <button type="submit" class="btn-confirm">Berish</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- SPEAK REMOVE MODAL -->
+<div class="modal-overlay" id="speakRemoveModal">
+    <div class="modal" style="max-width: 420px; text-align: center;">
+        <h3>Speak obunani olib tashlash</h3>
+        <p id="speakRemoveName" style="margin-bottom:8px;"></p>
+        <p>Foydalanuvchining Speak obunasi to'liq o'chiriladi — qayta ishlash uchun yangi obuna berish kerak bo'ladi.</p>
+        <form method="POST" action="/admin/subscription/remove">
+            <input type="hidden" name="telegram_id" id="speakRemoveTid">
+            <div class="modal-buttons" style="justify-content: center;">
+                <button type="button" class="btn-cancel" onclick="closeSpeakRemove()">Bekor qilish</button>
+                <button type="submit" class="btn-confirm-del">O'chirish</button>
+            </div>
+        </form>
+    </div>
+</div>
 """
     return layout("mocks", body)
+
+
+@app.post("/subscription/grant")
+def subscription_grant(
+    telegram_id: int = Form(...),
+    mode: str = Form("tariff"),
+    tariff_months: int = Form(0),
+    manual_months: int = Form(0),
+):
+    months = tariff_months if mode == "tariff" else manual_months
+    months = max(1, int(months or 1))
+    grant_subscription(telegram_id, months)
+    return RedirectResponse(url="/admin/mocks", status_code=303)
+
+
+@app.post("/subscription/remove")
+def subscription_remove(telegram_id: int = Form(...)):
+    remove_subscription(telegram_id)
+    return RedirectResponse(url="/admin/mocks", status_code=303)
 
 
 @app.post("/mocks/give")
