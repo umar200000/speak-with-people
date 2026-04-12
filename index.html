@@ -1592,6 +1592,38 @@
         var callStartTime = 0;
         var currentPartner = null;
 
+        // Reconnect va wake lock
+        var wakeLockObj = null;
+        var wsKeepAliveInterval = null;
+        var callActive = false;         // qo'ng'iroq davom etayotganidan belgilash
+        var reconnectInProgress = false;
+        var reconnectAttempts = 0;
+
+        // ===== SCREEN WAKE LOCK =====
+        async function requestWakeLockNow() {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLockObj = await navigator.wakeLock.request('screen');
+                    wakeLockObj.addEventListener('release', function() {
+                        // Screen lock o'z-o'zidan bo'shasa (masalan visibility change) — null qilamiz
+                        // Re-acquire visibilitychange handler'da bo'ladi.
+                    });
+                }
+            } catch (e) { /* silent */ }
+        }
+        async function releaseWakeLockNow() {
+            try {
+                if (wakeLockObj) { await wakeLockObj.release(); }
+            } catch(e) {}
+            wakeLockObj = null;
+        }
+        // Tab qayta visible bo'lganda wake lock qayta so'raladi (call hali aktiv bo'lsa)
+        document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'visible' && callActive && !wakeLockObj) {
+                requestWakeLockNow();
+            }
+        });
+
         var callLabels = {
             arabic: { connected: 'متصل', connecting: 'جارٍ الاتصال...', reconnecting: 'إعادة الاتصال...', ended: 'انتهت المكالمة' },
             turkish: { connected: 'Bağlandı', connecting: 'Bağlanıyor...', reconnecting: 'Yeniden bağlanıyor...', ended: 'Görüşme bitti' },
@@ -1700,43 +1732,111 @@
                 }));
             };
 
-            matchWs.onmessage = function(e) {
-                var msg = JSON.parse(e.data);
+            matchWs.onmessage = onWsMessage;
+            matchWs.onclose = onWsClose;
+        }
 
-                if (msg.action === 'matched') {
-                    currentCallLimitSec = msg.call_limit_seconds || 0;
-                    currentSelfPremium = !!msg.self_is_premium;
-                    currentPartnerPremium = !!msg.partner_is_premium;
-                    showCallPage(msg.partner, msg.is_caller);
-                } else if (msg.action === 'limit-reached') {
-                    // Server vaqtni yo'q deb qaytardi
-                    if (matchWs) { matchWs.close(); matchWs = null; }
-                    navigate('searchPage', 'progressPage', false);
-                    setTimeout(showLimitModal, 250);
-                } else if (msg.action === 'call-ended') {
-                    endCall(true);
-                }
-                // WebRTC signaling
-                else if (msg.action === 'offer') {
-                    handleOffer(msg.offer);
-                } else if (msg.action === 'answer') {
-                    handleAnswer(msg.answer);
-                } else if (msg.action === 'ice-candidate') {
-                    handleIceCandidate(msg.candidate);
-                } else if (msg.action === 'timer-sync') {
-                    if (!callTimerInterval) {
-                        callStartTime = msg.startTime;
-                        startTimerFromTimestamp(callStartTime);
-                    }
-                } else if (msg.action === 'connection-state') {
-                    updatePartnerState(msg.state);
-                } else if (msg.action === 'mute-state') {
-                    var badge = document.getElementById('partnerMuted');
-                    if (badge) { if (msg.muted) badge.classList.add('show'); else badge.classList.remove('show'); }
-                }
-            };
+        function onWsMessage(e) {
+            var msg;
+            try { msg = JSON.parse(e.data); } catch(err) { return; }
 
-            matchWs.onclose = function() { matchWs = null; };
+            if (msg.action === 'matched') {
+                currentCallLimitSec = msg.call_limit_seconds || 0;
+                currentSelfPremium = !!msg.self_is_premium;
+                currentPartnerPremium = !!msg.partner_is_premium;
+                showCallPage(msg.partner, msg.is_caller);
+            } else if (msg.action === 'limit-reached') {
+                if (matchWs) { matchWs.close(); matchWs = null; }
+                navigate('searchPage', 'progressPage', false);
+                setTimeout(showLimitModal, 250);
+            } else if (msg.action === 'call-ended') {
+                endCall(true);
+            } else if (msg.action === 'resumed') {
+                // Qayta ulanish muvaffaqiyatli — status statusdan olamiz
+                var st = document.getElementById('callStatus');
+                var clLbl = callLabels[currentUiLang] || callLabels[currentLang];
+                if (st && clLbl) st.textContent = clLbl.connected;
+                reconnectAttempts = 0;
+            } else if (msg.action === 'resume-failed') {
+                // Ser kata pair tugagan — chiqish
+                endCall(true);
+            } else if (msg.action === 'partner-resumed') {
+                // Partner qayta ulandi
+                var st2 = document.getElementById('callStatus');
+                var clLbl2 = callLabels[currentUiLang] || callLabels[currentLang];
+                if (st2 && clLbl2) st2.textContent = clLbl2.connected;
+            } else if (msg.action === 'pong') {
+                // no-op
+            }
+            // WebRTC signaling
+            else if (msg.action === 'offer') {
+                handleOffer(msg.offer);
+            } else if (msg.action === 'answer') {
+                handleAnswer(msg.answer);
+            } else if (msg.action === 'ice-candidate') {
+                handleIceCandidate(msg.candidate);
+            } else if (msg.action === 'timer-sync') {
+                if (!callTimerInterval) {
+                    callStartTime = msg.startTime;
+                    startTimerFromTimestamp(callStartTime);
+                }
+            } else if (msg.action === 'connection-state') {
+                updatePartnerState(msg.state);
+            } else if (msg.action === 'mute-state') {
+                var badge = document.getElementById('partnerMuted');
+                if (badge) { if (msg.muted) badge.classList.add('show'); else badge.classList.remove('show'); }
+            }
+        }
+
+        function onWsClose() {
+            matchWs = null;
+            // Agar qo'ng'iroq aktiv bo'lsa — qayta ulanishga urinamiz
+            if (callActive && currentPartner && !reconnectInProgress) {
+                tryReconnect();
+            }
+        }
+
+        function tryReconnect() {
+            if (!callActive || !currentPartner) return;
+            if (reconnectAttempts >= 8) {
+                // 8 urinish ham muvaffaqiyatsiz — call tugatamiz
+                endCall(true);
+                return;
+            }
+            reconnectInProgress = true;
+            reconnectAttempts += 1;
+            // Status ko'rsatgichni yangilash
+            var clLbl = callLabels[currentUiLang] || callLabels[currentLang];
+            var statusEl = document.getElementById('callStatus');
+            if (statusEl && clLbl) statusEl.textContent = clLbl.reconnecting;
+
+            setTimeout(function() {
+                if (!callActive || !currentPartner) { reconnectInProgress = false; return; }
+                var userId = tgUser ? tgUser.id : 0;
+                var partnerTid = (currentPartner && currentPartner.telegram_id) || 0;
+                if (!userId || !partnerTid) { reconnectInProgress = false; endCall(true); return; }
+                try {
+                    matchWs = new WebSocket(getWsUrl());
+                    matchWs.onopen = function() {
+                        reconnectInProgress = false;
+                        try {
+                            matchWs.send(JSON.stringify({
+                                action: 'resume-call',
+                                my_telegram_id: userId,
+                                partner_telegram_id: partnerTid
+                            }));
+                        } catch(e) {}
+                        startWsKeepAlive();
+                    };
+                    matchWs.onmessage = onWsMessage;
+                    matchWs.onclose = onWsClose;
+                    matchWs.onerror = function() { reconnectInProgress = false; };
+                } catch(e) {
+                    reconnectInProgress = false;
+                    // Keyingi urinish
+                    tryReconnect();
+                }
+            }, Math.min(2000 * reconnectAttempts, 8000));
         }
 
         function showCallPage(partner, isCaller) {
@@ -1769,11 +1869,29 @@
             h += '</div></div></div>';
 
             currentPartner = partner;
+            callActive = true;
+            reconnectAttempts = 0;
             document.getElementById('callContent').innerHTML = h;
             navigate('searchPage', 'callPage', true);
 
+            // Screen wake lock + ws keepalive
+            requestWakeLockNow();
+            startWsKeepAlive();
+
             // WebRTC boshlash
             startWebRTC(isCaller);
+        }
+
+        function startWsKeepAlive() {
+            if (wsKeepAliveInterval) clearInterval(wsKeepAliveInterval);
+            wsKeepAliveInterval = setInterval(function() {
+                if (matchWs && matchWs.readyState === 1) {
+                    try { matchWs.send(JSON.stringify({ action: 'ping' })); } catch(e) {}
+                }
+            }, 15000);
+        }
+        function stopWsKeepAlive() {
+            if (wsKeepAliveInterval) { clearInterval(wsKeepAliveInterval); wsKeepAliveInterval = null; }
         }
 
         function startWebRTC(isCaller) {
@@ -1814,8 +1932,15 @@
                 var audio = document.createElement('audio');
                 audio.srcObject = e.streams[0];
                 audio.autoplay = true;
+                audio.playsInline = true;
+                audio.setAttribute('playsinline', '');
+                audio.setAttribute('webkit-playsinline', '');
+                audio.controls = false;
                 audio.id = 'remoteAudio';
                 document.body.appendChild(audio);
+                // iOS / qaytgan fokus holatida avto-play tiklanishi
+                var tryPlay = function() { try { audio.play().catch(function(){}); } catch(e){} };
+                tryPlay();
             };
 
             function setupTracks(stream) {
@@ -1982,6 +2107,10 @@
             currentCallLimitSec = 0;
             currentSelfPremium = false;
             currentPartnerPremium = false;
+            callActive = false;
+            reconnectAttempts = 0;
+            stopWsKeepAlive();
+            releaseWakeLockNow();
             if (callTimerInterval) { clearInterval(callTimerInterval); callTimerInterval = null; }
             if (peerConnection) { peerConnection.close(); peerConnection = null; }
             if (localStream) { localStream.getTracks().forEach(function(t) { t.stop(); }); localStream = null; micReady = false; }

@@ -1,6 +1,7 @@
 import os
 import json
 import uuid
+import asyncio
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect, UploadFile, File, Form
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -193,8 +194,14 @@ def register(data: RegisterData):
 # ===== WEBSOCKET MATCHING + SIGNALING =====
 
 waiting_users = {}   # ws_id -> {ws, filters, user_info}
-active_pairs = {}    # ws_id -> partner_ws_id
 ws_connections = {}  # ws_id -> ws
+
+# Pair'lar endi user_id bo'yicha — reconnect imkoniyati uchun
+active_pairs_user = {}   # tid -> partner_tid (ikki yo'nalishli)
+user_current_ws = {}     # tid -> ws_id (foydalanuvchining joriy aktiv ulanishi)
+ws_user = {}             # ws_id -> tid
+pending_end_tasks = {}   # tid -> asyncio.Task (grace period)
+GRACE_SECONDS = 25       # disconnect'dan so'ng qayta ulanish uchun vaqt
 
 
 def check_match(user1, user2):
@@ -229,26 +236,111 @@ def check_match(user1, user2):
     return True
 
 
+def _partner_ws(tid):
+    """Partnerning joriy aktiv WebSocket ulanishi."""
+    partner_tid = active_pairs_user.get(tid)
+    if not partner_tid:
+        return None
+    p_ws_id = user_current_ws.get(partner_tid)
+    if not p_ws_id:
+        return None
+    return ws_connections.get(p_ws_id)
+
+
+async def _send_partner(tid, payload):
+    p_ws = _partner_ws(tid)
+    if p_ws:
+        try:
+            await p_ws.send_text(json.dumps(payload))
+            return True
+        except Exception:
+            return False
+    return False
+
+
+def _end_pair_cleanup(tid):
+    partner_tid = active_pairs_user.pop(tid, None)
+    if partner_tid:
+        active_pairs_user.pop(partner_tid, None)
+    return partner_tid
+
+
+async def _schedule_call_end(user_tid, partner_tid):
+    """Foydalanuvchi disconnect qilganda — GRACE_SECONDS kutish.
+    Agar shu vaqt ichida qayta ulansa — vazifa bekor qilinadi.
+    Aks holda partnerga 'call-ended' yuboriladi va pair tozalanadi."""
+    try:
+        await asyncio.sleep(GRACE_SECONDS)
+    except asyncio.CancelledError:
+        return
+    # Agar user qayta ulanmagan bo'lsa
+    if user_tid not in user_current_ws:
+        # Pair'ni tozalaymiz
+        if active_pairs_user.get(user_tid) == partner_tid:
+            _end_pair_cleanup(user_tid)
+            # Partnerga xabar beramiz
+            p_ws_id = user_current_ws.get(partner_tid)
+            if p_ws_id and p_ws_id in ws_connections:
+                try:
+                    await ws_connections[p_ws_id].send_text(
+                        json.dumps({"action": "call-ended", "reason": "partner-timeout"})
+                    )
+                except Exception:
+                    pass
+    pending_end_tasks.pop(user_tid, None)
+
+
+def _cancel_pending_end(tid):
+    task = pending_end_tasks.pop(tid, None)
+    if task and not task.done():
+        task.cancel()
+
+
 @webapp.websocket("/ws/match")
 async def websocket_match(ws: WebSocket):
     await ws.accept()
     ws_id = id(ws)
     ws_connections[ws_id] = ws
+    my_tid = None  # bu ws'ga tegishli telegram user id
 
     try:
         while True:
             data = json.loads(await ws.receive_text())
             action = data.get("action")
 
+            if action == "ping":
+                try:
+                    await ws.send_text(json.dumps({"action": "pong"}))
+                except Exception:
+                    pass
+                continue
+
             if action == "search":
                 user_info = data.get("user_info", {}) or {}
                 user_tid = int(user_info.get("telegram_id") or 0)
+                my_tid = user_tid or my_tid
                 user_premium = is_premium(user_tid) if user_tid else False
                 user_info["is_premium"] = user_premium
                 if user_tid:
                     user_info["telegram_id"] = user_tid
+                    # Eski pending tasks bekor qilish (masalan, oldingi qo'ng'iroq grace paytida)
+                    _cancel_pending_end(user_tid)
+                    # Eski aktiv pair bo'lsa — tozalash (yangi qidiruv)
+                    old_partner = active_pairs_user.pop(user_tid, None)
+                    if old_partner:
+                        active_pairs_user.pop(old_partner, None)
+                        p_ws_id = user_current_ws.get(old_partner)
+                        if p_ws_id and p_ws_id in ws_connections:
+                            try:
+                                await ws_connections[p_ws_id].send_text(
+                                    json.dumps({"action": "call-ended"})
+                                )
+                            except Exception:
+                                pass
+                    user_current_ws[user_tid] = ws_id
+                    ws_user[ws_id] = user_tid
 
-                # Agar non-premium bo'lsa, qolgan vaqtini tekshirish
+                # Non-premium bo'lsa qolgan vaqt tekshirilishi
                 if not user_premium and user_tid:
                     status = get_usage_status(user_tid)
                     if status["remaining_seconds"] <= 0:
@@ -272,18 +364,24 @@ async def websocket_match(ws: WebSocket):
                     if check_match(user_entry, other):
                         del waiting_users[ws_id]
                         del waiting_users[other_id]
-                        active_pairs[ws_id] = other_id
-                        active_pairs[other_id] = ws_id
 
-                        # Call limit hisoblash: ikkalasi ham non-premium bo'lsa
-                        # kichik qolgan vaqti bo'yicha cheklash, aks holda limitsiz
                         u1p = bool(user_entry["user_info"].get("is_premium"))
                         u2p = bool(other["user_info"].get("is_premium"))
+                        tid1 = int(user_entry["user_info"].get("telegram_id") or 0)
+                        tid2 = int(other["user_info"].get("telegram_id") or 0)
+
+                        # Pair'ni user_id bo'yicha saqlash
+                        if tid1 and tid2:
+                            active_pairs_user[tid1] = tid2
+                            active_pairs_user[tid2] = tid1
+                            user_current_ws[tid1] = ws_id
+                            user_current_ws[tid2] = other_id
+                            ws_user[ws_id] = tid1
+                            ws_user[other_id] = tid2
+
                         if u1p or u2p:
-                            call_limit = 0  # 0 = limitsiz
+                            call_limit = 0
                         else:
-                            tid1 = int(user_entry["user_info"].get("telegram_id") or 0)
-                            tid2 = int(other["user_info"].get("telegram_id") or 0)
                             r1 = get_usage_status(tid1)["remaining_seconds"] if tid1 else DAILY_LIMIT_SECONDS
                             r2 = get_usage_status(tid2)["remaining_seconds"] if tid2 else DAILY_LIMIT_SECONDS
                             call_limit = max(0, min(r1, r2))
@@ -310,43 +408,63 @@ async def websocket_match(ws: WebSocket):
                 if not matched:
                     await ws.send_text(json.dumps({"action": "waiting"}))
 
+            elif action == "resume-call":
+                # Ulanish uzilgach qayta ulanish
+                user_tid = int(data.get("my_telegram_id") or 0)
+                partner_tid = int(data.get("partner_telegram_id") or 0)
+                if not user_tid or not partner_tid:
+                    await ws.send_text(json.dumps({"action": "resume-failed"}))
+                    continue
+                my_tid = user_tid
+                # Pair hali mavjudmi?
+                if active_pairs_user.get(user_tid) == partner_tid and active_pairs_user.get(partner_tid) == user_tid:
+                    # Yangi ws bilan qayta bog'lash
+                    user_current_ws[user_tid] = ws_id
+                    ws_user[ws_id] = user_tid
+                    _cancel_pending_end(user_tid)
+                    await ws.send_text(json.dumps({"action": "resumed"}))
+                    # Partnerga xabar
+                    await _send_partner(user_tid, {"action": "partner-resumed"})
+                else:
+                    await ws.send_text(json.dumps({"action": "resume-failed"}))
+
             elif action == "cancel":
                 waiting_users.pop(ws_id, None)
-                await ws.send_text(json.dumps({"action": "cancelled"}))
+                try:
+                    await ws.send_text(json.dumps({"action": "cancelled"}))
+                except Exception:
+                    pass
 
             elif action in ("offer", "answer", "ice-candidate", "timer-sync", "connection-state", "mute-state"):
-                partner_id = active_pairs.get(ws_id)
-                if partner_id and partner_id in ws_connections:
-                    await ws_connections[partner_id].send_text(json.dumps(data))
+                if my_tid:
+                    await _send_partner(my_tid, data)
 
             elif action == "end-call":
-                partner_id = active_pairs.get(ws_id)
-                if partner_id and partner_id in ws_connections:
-                    try:
-                        await ws_connections[partner_id].send_text(
-                            json.dumps({"action": "call-ended"})
-                        )
-                    except Exception:
-                        pass
-                active_pairs.pop(ws_id, None)
-                if partner_id:
-                    active_pairs.pop(partner_id, None)
+                if my_tid:
+                    await _send_partner(my_tid, {"action": "call-ended"})
+                    _end_pair_cleanup(my_tid)
+                    _cancel_pending_end(my_tid)
 
     except WebSocketDisconnect:
         pass
     finally:
+        # Bu ws'ni tozalash
         waiting_users.pop(ws_id, None)
-        partner_id = active_pairs.pop(ws_id, None)
-        if partner_id:
-            active_pairs.pop(partner_id, None)
-            if partner_id in ws_connections:
-                try:
-                    await ws_connections[partner_id].send_text(
-                        json.dumps({"action": "call-ended"})
-                    )
-                except Exception:
-                    pass
         ws_connections.pop(ws_id, None)
+        tid_for_ws = ws_user.pop(ws_id, None)
+
+        if tid_for_ws:
+            # Agar bu user'ning joriy ws'i shu edi — grace period boshlaymiz
+            if user_current_ws.get(tid_for_ws) == ws_id:
+                user_current_ws.pop(tid_for_ws, None)
+                partner_tid = active_pairs_user.get(tid_for_ws)
+                if partner_tid:
+                    # Avvalgi pending bekor qilinadi va yangisi ochiladi
+                    _cancel_pending_end(tid_for_ws)
+                    task = asyncio.create_task(
+                        _schedule_call_end(tid_for_ws, partner_tid)
+                    )
+                    pending_end_tasks[tid_for_ws] = task
 
 
 # Adminkani /admin ostida mount qilish
