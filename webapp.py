@@ -1,7 +1,9 @@
 import os
 import json
-from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
+import uuid
+from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect, UploadFile, File, Form
 from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from database import (
     add_user,
@@ -14,6 +16,11 @@ from database import (
     add_daily_usage,
     is_premium,
     DAILY_LIMIT_SECONDS,
+    add_call_stats,
+    update_user_name,
+    update_user_photo,
+    get_leaders,
+    get_full_user_profile,
 )
 
 webapp = FastAPI()
@@ -30,6 +37,12 @@ class NgrokMiddleware(BaseHTTPMiddleware):
 webapp.add_middleware(NgrokMiddleware)
 
 HTML_PATH = os.path.join(os.path.dirname(__file__), "index.html")
+
+# Static: yuklanadigan rasmlar
+STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
+AVATARS_DIR = os.path.join(STATIC_DIR, "avatars")
+os.makedirs(AVATARS_DIR, exist_ok=True)
+webapp.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
 class RegisterData(BaseModel):
@@ -88,22 +101,76 @@ class UsageReport(BaseModel):
 @webapp.post("/api/usage/report")
 def api_usage_report(data: UsageReport):
     """Qo'ng'iroq tugaganda sarflangan soniyani hisobga qo'shish.
-    Agar partner premium bo'lsa — non-premium user'ga hisoblanmaydi."""
+    - Users jadvaliga umumiy stats (total_seconds, total_calls) har doim qo'shiladi
+    - Daily usage (8daq limit) faqat ikkalasi ham non-premium bo'lganda qo'shiladi."""
     if data.seconds <= 0:
         return get_usage_status(data.telegram_id)
+
+    # Umumiy stats (leaderboard uchun) — hamisha
+    add_call_stats(data.telegram_id, data.seconds)
+
     user_premium = is_premium(data.telegram_id)
     partner_premium = (
         is_premium(data.partner_telegram_id) if data.partner_telegram_id else False
     )
-    # Premium userning vaqti hisobga olinmaydi umuman
-    if user_premium:
+    if user_premium or partner_premium:
         return get_usage_status(data.telegram_id)
-    # Non-premium, lekin partner premium bo'lsa — hisoblanmaydi
-    if partner_premium:
-        return get_usage_status(data.telegram_id)
-    # Ikkalasi ham non-premium — usage'ga qo'shiladi
+    # Ikkalasi ham non-premium — kunlik usage'ga qo'shiladi
     add_daily_usage(data.telegram_id, data.seconds)
     return get_usage_status(data.telegram_id)
+
+
+# ===== LEADERS / PROFILE =====
+@webapp.get("/api/leaders")
+def api_leaders():
+    return {"leaders": get_leaders(30)}
+
+
+@webapp.get("/api/profile/{telegram_id}")
+def api_profile(telegram_id: int):
+    profile = get_full_user_profile(telegram_id)
+    return {"profile": profile}
+
+
+class NameUpdate(BaseModel):
+    telegram_id: int
+    first_name: str
+
+
+@webapp.post("/api/profile/name")
+def api_update_name(data: NameUpdate):
+    ok = update_user_name(data.telegram_id, data.first_name)
+    return {"ok": ok}
+
+
+ALLOWED_IMG_EXT = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+MAX_AVATAR_BYTES = 5 * 1024 * 1024  # 5 MB
+
+
+@webapp.post("/api/profile/photo")
+async def api_update_photo(telegram_id: int = Form(...), file: UploadFile = File(...)):
+    # Xavfsizlik: extension va o'lcham
+    fname = (file.filename or "").lower()
+    ext = ""
+    for e in ALLOWED_IMG_EXT:
+        if fname.endswith(e):
+            ext = e
+            break
+    if not ext:
+        return {"ok": False, "error": "invalid_format"}
+
+    data = await file.read()
+    if len(data) == 0 or len(data) > MAX_AVATAR_BYTES:
+        return {"ok": False, "error": "invalid_size"}
+
+    # Fayl nomi: tid_uuid.ext (cache bust)
+    safe_name = f"{telegram_id}_{uuid.uuid4().hex[:10]}{ext}"
+    path = os.path.join(AVATARS_DIR, safe_name)
+    with open(path, "wb") as f:
+        f.write(data)
+    url = f"/static/avatars/{safe_name}"
+    update_user_photo(telegram_id, url)
+    return {"ok": True, "photo_url": url}
 
 
 @webapp.post("/api/register")

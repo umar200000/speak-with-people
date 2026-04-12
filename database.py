@@ -29,6 +29,14 @@ def init_db():
         conn.execute("ALTER TABLE users ADD COLUMN photo_url TEXT")
     except sqlite3.OperationalError:
         pass
+    try:
+        conn.execute("ALTER TABLE users ADD COLUMN total_seconds INTEGER DEFAULT 0")
+    except sqlite3.OperationalError:
+        pass
+    try:
+        conn.execute("ALTER TABLE users ADD COLUMN total_calls INTEGER DEFAULT 0")
+    except sqlite3.OperationalError:
+        pass
 
     conn.execute("""
         CREATE TABLE IF NOT EXISTS tariffs (
@@ -531,6 +539,77 @@ def get_usage_status(telegram_id):
         "used_seconds": used,
         "remaining_seconds": remaining,
     }
+
+
+# ===== STATS / PROFILE / LEADERS =====
+def add_call_stats(telegram_id, seconds):
+    """Har qo'ng'iroq tugaganda users jadvaliga qo'shiladi (premium'ga ham).
+    Agar user yo'q bo'lsa — yaratmaydi (bot start qilingan user'lar uchun faqat)."""
+    seconds = max(0, int(seconds))
+    if seconds == 0 or not telegram_id:
+        return
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute(
+        "UPDATE users SET total_seconds = COALESCE(total_seconds, 0) + ?, total_calls = COALESCE(total_calls, 0) + 1 WHERE telegram_id = ?",
+        (seconds, telegram_id),
+    )
+    conn.commit()
+    conn.close()
+
+
+def update_user_name(telegram_id, first_name):
+    first_name = (first_name or "").strip()[:60]
+    if not first_name:
+        return False
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute(
+        "UPDATE users SET first_name = ? WHERE telegram_id = ?",
+        (first_name, telegram_id),
+    )
+    conn.commit()
+    conn.close()
+    return True
+
+
+def update_user_photo(telegram_id, photo_url):
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute(
+        "UPDATE users SET photo_url = ? WHERE telegram_id = ?",
+        (photo_url, telegram_id),
+    )
+    conn.commit()
+    conn.close()
+
+
+def get_leaders(limit=30):
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    rows = conn.execute(
+        """
+        SELECT telegram_id, first_name, username, photo_url, gender,
+               COALESCE(total_seconds, 0) AS total_seconds,
+               COALESCE(total_calls, 0) AS total_calls
+        FROM users
+        WHERE COALESCE(total_seconds, 0) > 0 OR COALESCE(total_calls, 0) > 0
+        ORDER BY total_seconds DESC, total_calls DESC
+        LIMIT ?
+        """,
+        (limit,),
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def get_full_user_profile(telegram_id):
+    user = get_user(telegram_id)
+    if not user:
+        return None
+    user["total_seconds"] = user.get("total_seconds") or 0
+    user["total_calls"] = user.get("total_calls") or 0
+    user["mocks"] = get_user_mocks(telegram_id)
+    user["subscription"] = get_user_subscription(telegram_id)
+    user["usage"] = get_usage_status(telegram_id)
+    return user
 
 
 init_db()
