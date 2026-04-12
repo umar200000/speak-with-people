@@ -803,6 +803,31 @@
 
         .profile-loading { text-align: center; padding: 60px 20px; color: #8e8e93; }
 
+        .level-change-card {
+            background: white; border-radius: 14px; padding: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06);
+            animation: slideUp .4s ease both;
+        }
+        .level-change-sub { font-size: 12px; color: #8e8e93; margin-bottom: 12px; line-height: 1.4; }
+        .level-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .level-pick {
+            padding: 14px 6px; border-radius: 12px; border: 2px solid #e5e5ea;
+            background: #fafbff; cursor: pointer; text-align: center;
+            -webkit-tap-highlight-color: transparent; transition: all 0.15s ease;
+        }
+        .level-pick:active { transform: scale(0.96); }
+        .level-pick.current {
+            border-color: #007aff; background: linear-gradient(135deg, #f0f5ff, #ffffff);
+            box-shadow: 0 2px 8px rgba(0,122,255,0.15);
+        }
+        .theme-arabic .level-pick.current { border-color: #34c759; background: linear-gradient(135deg, #f0fff4, #ffffff); box-shadow: 0 2px 8px rgba(52,199,89,0.15); }
+        .theme-turkish .level-pick.current { border-color: #ff3b30; background: linear-gradient(135deg, #fff5f5, #ffffff); box-shadow: 0 2px 8px rgba(255,59,48,0.15); }
+        .level-pick-badge { font-size: 16px; font-weight: 800; color: #1c1c1e; }
+        .level-pick.current .level-pick-badge { color: #007aff; }
+        .theme-arabic .level-pick.current .level-pick-badge { color: #34c759; }
+        .theme-turkish .level-pick.current .level-pick-badge { color: #ff3b30; }
+        .level-pick-name { font-size: 11px; color: #8e8e93; margin-top: 3px; font-weight: 500; }
+
         /* Generic modal overlay for mini app */
         .mini-modal-overlay {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -952,6 +977,10 @@
         var selectedGender = null;
         var sharedPhone = '';
         var currentLang = null;
+        var currentUiLang = 'uzbek';  // A1 → uzbek, A2+ → currentLang
+        function computeUiLang(lang, badge) {
+            return (!badge || badge === 'A1') ? 'uzbek' : lang;
+        }
         var backSvg = '<svg width="10" height="16" viewBox="0 0 10 16" fill="none"><path d="M9 1L2 8L9 15" stroke="#007aff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
         // Har bir til uchun tanlangan darajani saqlash/olish
@@ -1143,6 +1172,7 @@
         function selectLevel(badge, levelName) {
             // Darajani saqlash
             saveLevel(currentLang, badge);
+            currentUiLang = computeUiLang(currentLang, badge);
             // Asosiy sahifaga o'tish
             showMainPage(currentLang, badge, levelName);
             navigate('levelPage', 'progressPage', true);
@@ -1152,7 +1182,8 @@
         var navLabels = {
             arabic: { talk: 'محادثة', cefr: 'المستوى', premium: 'بريميوم', leaders: 'المتصدرين', profile: 'الملف' },
             turkish: { talk: 'Konuşma', cefr: 'Seviye', premium: 'Premium', leaders: 'Liderlik', profile: 'Profil' },
-            english: { talk: 'Talk', cefr: 'CEFR', premium: 'Premium', leaders: 'Leaders', profile: 'Profile' }
+            english: { talk: 'Talk', cefr: 'CEFR', premium: 'Premium', leaders: 'Leaders', profile: 'Profile' },
+            uzbek: { talk: 'Suhbat', cefr: 'Daraja', premium: 'Premium', leaders: 'Liderlar', profile: 'Profil' }
         };
 
         var tabIcons = {
@@ -1181,6 +1212,12 @@
                 premium: { icon: '⭐', title: 'Premium', text: 'Get exclusive features and advanced content' },
                 leaders: { icon: '🏆', title: 'Leaderboard', text: 'Compete with other learners' },
                 profile: { icon: '👤', title: 'Profile', text: 'Your info and settings' }
+            },
+            uzbek: {
+                cefr: { icon: '📖', title: 'Daraja', text: 'CEFR standartlari bo\'yicha darajangizni tekshiring' },
+                premium: { icon: '⭐', title: 'Premium', text: 'Maxsus imkoniyatlar va qo\'shimcha kontent oling' },
+                leaders: { icon: '🏆', title: 'Liderlar', text: 'Boshqa o\'quvchilar bilan raqobatlashing' },
+                profile: { icon: '👤', title: 'Profil', text: 'Ma\'lumotlaringiz va sozlamalar' }
             }
         };
 
@@ -1203,6 +1240,12 @@
                 levelTitle: 'Partner Level', findBtn: 'Find Partner',
                 searchTitle: 'Searching for partner...', searchSub: 'Please wait, we are finding the best conversation partner for you',
                 cancelBtn: 'Cancel', historyTitle: 'Recent Calls', noHistory: 'No calls yet'
+            },
+            uzbek: {
+                partnerTitle: 'Sherik tanlang', girls: 'Qizlar', boys: 'Yigitlar', any: 'Hammasi',
+                levelTitle: 'Sherik darajasi', findBtn: 'Sherik topish',
+                searchTitle: 'Sherik qidirilmoqda...', searchSub: 'Iltimos kuting, siz uchun eng mos suhbat sherigi qidirilmoqda',
+                cancelBtn: 'Bekor qilish', historyTitle: 'So\'nggi qo\'ng\'iroqlar', noHistory: 'Hali qo\'ng\'iroqlar yo\'q'
             }
         };
 
@@ -1235,7 +1278,7 @@
         }
 
         function buildTalkContent(lang) {
-            var t = talkLabels[lang];
+            var t = talkLabels[currentUiLang] || talkLabels[lang];
             var h = '<div class="talk-section">';
 
             // Usage banner (async to'ldiriladi)
@@ -1338,6 +1381,18 @@
                 limitModalText: 'Users without a subscription get 8 minutes per day. Buy Speak for unlimited access.',
                 limitCancel: 'Close',
                 limitBuy: 'Buy Speak'
+            },
+            uzbek: {
+                premiumTitle: '👑 Premium obuna faol',
+                premiumSub: 'Cheksiz suhbat',
+                freeTitle: 'Kunlik vaqtingiz',
+                freeSub: '8 daqiqadan {m} daq {s} son qoldi',
+                outTitle: 'Kunlik vaqt tugadi',
+                outSub: 'Cheksiz foydalanish uchun Speak tarifni oling',
+                limitModalTitle: 'Kunlik vaqt tugadi',
+                limitModalText: 'Tarifsiz foydalanuvchilar kuniga 8 daqiqa gaplasha oladi. Cheksiz suhbat uchun Speak tarifni sotib oling.',
+                limitCancel: 'Yopish',
+                limitBuy: 'Speak sotib olish'
             }
         };
 
@@ -1354,7 +1409,7 @@
         }
 
         function renderUsageBanner(lang, data) {
-            var ut = usageTexts[lang] || usageTexts.english;
+            var ut = usageTexts[currentUiLang] || usageTexts.english;
             var wrap = document.getElementById('usageBanner');
             if (!wrap) return;
             if (data.is_premium) {
@@ -1395,7 +1450,7 @@
 
         function showLimitModal() {
             var lang = currentLang || 'english';
-            var ut = usageTexts[lang] || usageTexts.english;
+            var ut = usageTexts[currentUiLang] || usageTexts.english;
             document.getElementById('limitModalTitle').textContent = ut.limitModalTitle;
             document.getElementById('limitModalText').textContent = ut.limitModalText;
             document.getElementById('limitCancelBtn').textContent = ut.limitCancel;
@@ -1540,7 +1595,8 @@
         var callLabels = {
             arabic: { connected: 'متصل', connecting: 'جارٍ الاتصال...', reconnecting: 'إعادة الاتصال...', ended: 'انتهت المكالمة' },
             turkish: { connected: 'Bağlandı', connecting: 'Bağlanıyor...', reconnecting: 'Yeniden bağlanıyor...', ended: 'Görüşme bitti' },
-            english: { connected: 'Connected', connecting: 'Connecting...', reconnecting: 'Reconnecting...', ended: 'Call ended' }
+            english: { connected: 'Connected', connecting: 'Connecting...', reconnecting: 'Reconnecting...', ended: 'Call ended' },
+            uzbek: { connected: 'Ulandi', connecting: 'Ulanmoqda...', reconnecting: 'Qayta ulanmoqda...', ended: 'Qo\'ng\'iroq tugadi' }
         };
 
         // Mikrofon ruxsatini oldindan olish
@@ -1584,7 +1640,7 @@
 
         function openSearchPage() {
             var data = langs[currentLang];
-            var t = talkLabels[currentLang];
+            var t = talkLabels[currentUiLang] || talkLabels[currentLang];
             var searchSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="#8e8e93" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>';
 
             var h = '<div class="' + data.theme + '">';
@@ -1685,7 +1741,7 @@
 
         function showCallPage(partner, isCaller) {
             var data = langs[currentLang];
-            var cl = callLabels[currentLang];
+            var cl = callLabels[currentUiLang] || callLabels[currentLang];
             var letter = (partner.name || '?')[0].toUpperCase();
 
             var h = '<div class="' + data.theme + '">';
@@ -1734,7 +1790,7 @@
 
             peerConnection.onconnectionstatechange = function() {
                 var state = peerConnection ? peerConnection.connectionState : 'closed';
-                var cl = callLabels[currentLang];
+                var cl = (callLabels[currentUiLang] || callLabels[currentLang]);
                 var statusEl = document.getElementById('callStatus');
                 if (state === 'connected') {
                     if (statusEl) statusEl.textContent = cl.connected;
@@ -1809,7 +1865,7 @@
         }
 
         function updatePartnerState(state) {
-            var cl = callLabels[currentLang];
+            var cl = (callLabels[currentUiLang] || callLabels[currentLang]);
             var statusEl = document.getElementById('callStatus');
             if (!statusEl) return;
             if (state === 'connected') statusEl.textContent = cl.connected;
@@ -2123,6 +2179,49 @@
                 sum: 'UZS',
                 badgeMock: 'mock',
                 badgeMonth: 'mo'
+            },
+            uzbek: {
+                sectionBalance: 'Balans',
+                sectionPlans: 'Tariflar',
+                mockHeroTitle: 'Mock tarifi',
+                mockHeroSub: 'Mock imtihonlarini sotib oling — to\'lang va darhol foydalaning',
+                speakHeroTitle: 'Speak tarifi',
+                speakHeroSub: 'Cheksiz suhbat — vaqt cheklovisiz gaplashing',
+                speakHeroActiveTitle: 'Faol — Premium obuna',
+                speakHeroActiveSub: 'Cheksiz foydalanish — tafsilotlar uchun bosing',
+                balanceTitle: 'Mock balansi',
+                balanceHas: 'Sizda {n} ta mock bor',
+                balanceZero: 'Hozircha mock yo\'q',
+                speakBalanceTitle: 'Speak obuna',
+                balanceSpeakActive: 'Faol',
+                balanceSpeakExpired: 'Tugagan',
+                balanceSpeakNone: 'Tarif yo\'q',
+                balanceSpeakNoneSub: 'Cheksiz suhbat uchun tarif sotib oling',
+                subActiveHeader: 'Faol',
+                subExpiredHeader: 'Tugagan',
+                subStartLabel: 'Boshlanish',
+                subEndLabel: 'Tugash',
+                subDaysLeft: '{n} kun qoldi',
+                listTitle: 'Tarifni tanlang',
+                listSub: 'Sizga mos mock sonini tanlang',
+                listSpeakTitle: 'Speak muddatini tanlang',
+                listSpeakSub: 'Sizga mos obuna muddatini tanlang',
+                payTitle: 'To\'lov ma\'lumotlari',
+                basicLabel: 'Tarif',
+                cardNumLabel: 'Karta raqami',
+                cardOwnerLabel: 'Karta egasi',
+                amountLabel: 'To\'lov summasi',
+                copyBtn: 'Nusxa',
+                copied: '✓ Nusxa olindi',
+                copyToast: 'Karta raqami nusxalandi',
+                sendBtn: 'Skrinshot yuborish',
+                note: 'To\'lovdan keyin chekning skrinshotini yuboring — 24 soat ichida faollashtiramiz.',
+                empty: 'Hozircha tariflar yo\'q',
+                mockUnit: 'mock',
+                monthUnit: 'oy',
+                sum: 'so\'m',
+                badgeMock: 'mock',
+                badgeMonth: 'oy'
             }
         };
 
@@ -2149,7 +2248,7 @@
         }
 
         function buildPremiumContent(lang) {
-            var pl = premiumLabels[lang] || premiumLabels.english;
+            var pl = premiumLabels[currentUiLang] || premiumLabels.english;
             var h = '<div class="premium-wrap">';
 
             h += '<div class="section-title">' + pl.sectionBalance + '</div>';
@@ -2206,7 +2305,7 @@
         }
 
         function loadSubscription(lang) {
-            var pl = premiumLabels[lang] || premiumLabels.english;
+            var pl = premiumLabels[currentUiLang] || premiumLabels.english;
             var userId = tgUser ? tgUser.id : 0;
             if (!userId) {
                 renderSubscription(null, pl);
@@ -2272,7 +2371,7 @@
 
         function loadMockBalance(lang) {
             var userId = tgUser ? tgUser.id : 0;
-            var pl = premiumLabels[lang] || premiumLabels.english;
+            var pl = premiumLabels[currentUiLang] || premiumLabels.english;
             if (!userId) {
                 renderBalance(0, pl);
                 return;
@@ -2306,7 +2405,7 @@
         function openTariffsPage(type) {
             selectedTariffType = (type === 'speak') ? 'speak' : 'mock';
             var lang = currentLang || 'english';
-            var pl = premiumLabels[lang] || premiumLabels.english;
+            var pl = premiumLabels[currentUiLang] || premiumLabels.english;
             var data = langs[lang];
 
             var title = selectedTariffType === 'speak' ? pl.listSpeakTitle : pl.listTitle;
@@ -2343,7 +2442,7 @@
         }
 
         function renderTariffsList(lang) {
-            var pl = premiumLabels[lang] || premiumLabels.english;
+            var pl = premiumLabels[currentUiLang] || premiumLabels.english;
             var listEl = document.getElementById('tariffsList');
             if (!listEl) return;
             var isSpeak = selectedTariffType === 'speak';
@@ -2399,7 +2498,7 @@
             selectedTariff = t;
 
             var lang = currentLang || 'english';
-            var pl = premiumLabels[lang] || premiumLabels.english;
+            var pl = premiumLabels[currentUiLang] || premiumLabels.english;
             var data = langs[lang];
 
             var badgeCount = isSpeak ? t.months : t.mock_count;
@@ -2479,7 +2578,7 @@
             };
             var showCopied = function() {
                 var lang = currentLang || 'english';
-                var pl = premiumLabels[lang] || premiumLabels.english;
+                var pl = premiumLabels[currentUiLang] || premiumLabels.english;
                 var btn = document.getElementById('copyBtn');
                 var btnText = document.getElementById('copyBtnText');
                 if (btn) btn.classList.add('copied');
@@ -2534,6 +2633,13 @@
                 empty: 'No leaders yet — start a call!',
                 callsUnit: 'calls',
                 hours: 'h', mins: 'm', secs: 's'
+            },
+            uzbek: {
+                title: 'Liderlar',
+                sub: 'Eng faol 30 ta suhbatdosh',
+                empty: 'Hali liderlar yo\'q — suhbatni boshlang!',
+                callsUnit: 'ta qo\'ng\'iroq',
+                hours: 'soat', mins: 'daq', secs: 'son'
             }
         };
 
@@ -2548,7 +2654,7 @@
         }
 
         function buildLeadersContent(lang) {
-            var ll = leadersLabels[lang] || leadersLabels.english;
+            var ll = leadersLabels[currentUiLang] || leadersLabels.english;
             var h = '<div class="leaders-wrap">';
             h += '<div class="leaders-header">';
             h += '<div class="leaders-header-title">🏆 ' + ll.title + '</div>';
@@ -2568,7 +2674,7 @@
         }
 
         function renderLeaders(lang, list) {
-            var ll = leadersLabels[lang] || leadersLabels.english;
+            var ll = leadersLabels[currentUiLang] || leadersLabels.english;
             var el = document.getElementById('leadersList');
             if (!el) return;
             if (!list.length) {
@@ -2626,7 +2732,9 @@
                 photoBig: 'الصورة كبيرة جداً (5 ميغا كحد أقصى)',
                 photoBad: 'نوع الملف غير مدعوم',
                 hours: 'س', mins: 'د', secs: 'ث',
-                callsUnit: 'مكالمة'
+                callsUnit: 'مكالمة',
+                changeLevelTitle: 'تغيير المستوى',
+                changeLevelSub: 'اختر مستواك الحالي — سيتم إعادة تحميل الواجهة'
             },
             turkish: {
                 editBtn: 'Profili düzenle',
@@ -2653,7 +2761,9 @@
                 photoBig: 'Fotoğraf çok büyük (en fazla 5 MB)',
                 photoBad: 'Desteklenmeyen dosya türü',
                 hours: 'sa', mins: 'dk', secs: 'sn',
-                callsUnit: 'görüşme'
+                callsUnit: 'görüşme',
+                changeLevelTitle: 'Seviyeyi değiştir',
+                changeLevelSub: 'Mevcut seviyenizi seçin — arayüz yeniden yüklenecek'
             },
             english: {
                 editBtn: 'Edit profile',
@@ -2680,7 +2790,38 @@
                 photoBig: 'Photo too large (max 5 MB)',
                 photoBad: 'Unsupported file type',
                 hours: 'h', mins: 'm', secs: 's',
-                callsUnit: 'calls'
+                callsUnit: 'calls',
+                changeLevelTitle: 'Change level',
+                changeLevelSub: 'Pick your current level — the interface will reload'
+            },
+            uzbek: {
+                editBtn: 'Profilni tahrirlash',
+                editTitle: 'Profilni tahrirlash',
+                nameLabel: 'Ism',
+                photoLabel: 'Rasm',
+                choosePhoto: 'Rasm tanlash',
+                save: 'Saqlash',
+                cancel: 'Bekor qilish',
+                statsTitle: 'Statistika',
+                infoTitle: 'Hisob ma\'lumotlari',
+                totalTime: 'Jami gaplashgan vaqt',
+                totalCalls: 'Qo\'ng\'iroqlar soni',
+                phone: 'Telefon',
+                gender: 'Jinsi',
+                mocks: 'Mocklar',
+                speakStatus: 'Speak obuna',
+                subActive: 'Faol',
+                subExpired: 'Tugagan',
+                subNone: 'Yo\'q',
+                dailyUsage: 'Kunlik vaqt',
+                premium: 'Premium',
+                savedOk: '✓ Saqlandi',
+                photoBig: 'Rasm juda katta (5 MB gacha)',
+                photoBad: 'Qo\'llab-quvvatlanmaydigan fayl turi',
+                hours: 'soat', mins: 'daq', secs: 'son',
+                callsUnit: 'ta qo\'ng\'iroq',
+                changeLevelTitle: 'Darajani o\'zgartirish',
+                changeLevelSub: 'Joriy darajangizni tanlang — interfeys qayta yuklanadi'
             }
         };
 
@@ -2710,7 +2851,7 @@
         }
 
         function renderProfile(lang, p) {
-            var pr = profileLabels[lang] || profileLabels.english;
+            var pr = profileLabels[currentUiLang] || profileLabels.english;
             var wrap = document.getElementById('profileWrap');
             if (!wrap) return;
             if (!p) {
@@ -2789,13 +2930,47 @@
             h += '<div class="profile-info-row"><div class="profile-info-label">⏱️ ' + pr.dailyUsage + '</div><div class="profile-info-value">' + usageStr + '</div></div>';
             h += '</div>';
 
+            // Change Level sektsiyasi
+            var curBadge = getSavedLevel(currentLang) || 'A1';
+            var langData = langs[currentLang];
+            if (langData) {
+                h += '<div class="profile-section-title">' + pr.changeLevelTitle + '</div>';
+                h += '<div class="level-change-card">';
+                h += '<div class="level-change-sub">' + pr.changeLevelSub + '</div>';
+                h += '<div class="level-grid">';
+                for (var i = 0; i < langData.levels.length; i++) {
+                    var lv = langData.levels[i];
+                    var cur = lv.badge === curBadge ? ' current' : '';
+                    h += '<div class="level-pick' + cur + '" data-badge="' + lv.badge + '" data-name="' + escapeHtml(lv.name) + '" onclick="changeUserLevel(this.dataset.badge, this.dataset.name)">';
+                    h += '<div class="level-pick-badge">' + lv.badge + '</div>';
+                    h += '<div class="level-pick-name">' + escapeHtml(lv.name) + '</div>';
+                    h += '</div>';
+                }
+                h += '</div></div>';
+            }
+
             wrap.innerHTML = h;
+        }
+
+        function changeUserLevel(badge, levelName) {
+            if (!currentLang || !badge) return;
+            // Telegram haptic
+            if (tg && tg.HapticFeedback && tg.HapticFeedback.impactOccurred) {
+                try { tg.HapticFeedback.impactOccurred('medium'); } catch(e) {}
+            }
+            saveLevel(currentLang, badge);
+            currentUiLang = computeUiLang(currentLang, badge);
+            // Qayta renderlash — showMainPage asosiy sahifani to'liq qayta quradi,
+            // bu butun UI ni yangi tilda chiqaradi. Navigatsiya kerak emas — allaqachon progressPage'dayiz.
+            showMainPage(currentLang, badge, levelName);
+            // Profil tabni aktiv qilish (main page talk tab bilan ochiladi)
+            setTimeout(function() { switchTab('profile'); }, 50);
         }
 
         function openProfileEdit() {
             if (!cachedProfile) return;
             var lang = currentLang || 'english';
-            var pr = profileLabels[lang] || profileLabels.english;
+            var pr = profileLabels[currentUiLang] || profileLabels.english;
             document.getElementById('editNameInput').value = cachedProfile.first_name || '';
             document.getElementById('editNameLabel').textContent = pr.nameLabel;
             document.getElementById('editModalTitle').textContent = pr.editTitle;
@@ -2819,7 +2994,7 @@
             }).then(function() {
                 closeProfileEdit();
                 var lang = currentLang || 'english';
-                var pr = profileLabels[lang] || profileLabels.english;
+                var pr = profileLabels[currentUiLang] || profileLabels.english;
                 showToast(pr.savedOk);
                 loadProfile(lang);
             }).catch(function() { closeProfileEdit(); });
@@ -2829,7 +3004,7 @@
             var file = ev.target && ev.target.files && ev.target.files[0];
             if (!file) return;
             var lang = currentLang || 'english';
-            var pr = profileLabels[lang] || profileLabels.english;
+            var pr = profileLabels[currentUiLang] || profileLabels.english;
             if (file.size > 5 * 1024 * 1024) { showToast(pr.photoBig); return; }
             var userId = tgUser ? tgUser.id : 0;
             if (!userId) return;
@@ -2859,9 +3034,10 @@
         }
 
         function showMainPage(lang, badge, levelName) {
+            currentUiLang = computeUiLang(lang, badge);
             var data = langs[lang];
-            var labels = navLabels[lang];
-            var placeholders = tabPlaceholders[lang];
+            var labels = navLabels[currentUiLang] || navLabels[lang];
+            var placeholders = tabPlaceholders[currentUiLang] || tabPlaceholders[lang];
 
             var h = '<div class="' + data.theme + ' main-page">';
 
