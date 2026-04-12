@@ -3,7 +3,7 @@ import json
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
-from database import add_user, get_user, get_all_tariffs
+from database import add_user, get_user, get_all_tariffs, get_user_mocks
 
 webapp = FastAPI()
 
@@ -46,6 +46,11 @@ def check_user(telegram_id: int):
 @webapp.get("/api/tariffs")
 def api_tariffs():
     return {"tariffs": get_all_tariffs(active_only=True)}
+
+
+@webapp.get("/api/mocks/{telegram_id}")
+def api_mocks(telegram_id: int):
+    return {"mocks": get_user_mocks(telegram_id)}
 
 
 @webapp.post("/api/register")
@@ -186,6 +191,11 @@ async def websocket_match(ws: WebSocket):
                 except Exception:
                     pass
         ws_connections.pop(ws_id, None)
+
+
+# Adminkani /admin ostida mount qilish
+from admin import app as admin_app
+webapp.mount("/admin", admin_app)
 
 
 if __name__ == "__main__":

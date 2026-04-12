@@ -53,6 +53,17 @@ def init_db():
             "INSERT INTO tariffs (title, mock_count, price, description, is_active, sort_order) VALUES (?, ?, ?, ?, 1, 2)",
             ("3 ta mock", 3, 99000, "Uchta mock imtihon — tejamkor"),
         )
+
+    # User mocks (har til uchun alohida)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS user_mocks (
+            telegram_id INTEGER NOT NULL,
+            language TEXT NOT NULL,
+            mock_count INTEGER NOT NULL DEFAULT 0,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (telegram_id, language)
+        )
+    """)
     conn.commit()
     conn.close()
 
@@ -178,6 +189,76 @@ def delete_tariff(tariff_id):
     conn.execute("DELETE FROM tariffs WHERE id = ?", (tariff_id,))
     conn.commit()
     conn.close()
+
+
+# ===== USER MOCKS =====
+LANGUAGES = ("arabic", "turkish", "english")
+
+
+def get_user_mocks(telegram_id):
+    """Har til uchun mock count qaytaradi (default 0)."""
+    conn = sqlite3.connect(DB_PATH)
+    rows = conn.execute(
+        "SELECT language, mock_count FROM user_mocks WHERE telegram_id = ?",
+        (telegram_id,),
+    ).fetchall()
+    conn.close()
+    result = {lang: 0 for lang in LANGUAGES}
+    for lang, cnt in rows:
+        if lang in result:
+            result[lang] = cnt
+    return result
+
+
+def set_user_mocks(telegram_id, language, count):
+    if language not in LANGUAGES:
+        raise ValueError(f"Unknown language: {language}")
+    count = max(0, int(count))
+    now = datetime.now(TZ_TASHKENT).strftime("%Y-%m-%d %H:%M:%S")
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute(
+        """
+        INSERT INTO user_mocks (telegram_id, language, mock_count, updated_at)
+        VALUES (?, ?, ?, ?)
+        ON CONFLICT(telegram_id, language) DO UPDATE SET
+            mock_count = excluded.mock_count,
+            updated_at = excluded.updated_at
+        """,
+        (telegram_id, language, count, now),
+    )
+    conn.commit()
+    conn.close()
+    return count
+
+
+def adjust_user_mocks(telegram_id, language, delta):
+    """Mock sonini +delta qiladi (manfiy bo'lsa kamaytiradi, 0 dan past bo'lmaydi)."""
+    if language not in LANGUAGES:
+        raise ValueError(f"Unknown language: {language}")
+    current = get_user_mocks(telegram_id)[language]
+    new_val = max(0, current + int(delta))
+    return set_user_mocks(telegram_id, language, new_val)
+
+
+def get_all_users_with_mocks():
+    """Foydalanuvchilar + har til uchun mock count."""
+    users = get_all_users()
+    conn = sqlite3.connect(DB_PATH)
+    rows = conn.execute(
+        "SELECT telegram_id, language, mock_count FROM user_mocks"
+    ).fetchall()
+    conn.close()
+
+    mocks_by_user = {}
+    for tid, lang, cnt in rows:
+        mocks_by_user.setdefault(tid, {lang_: 0 for lang_ in LANGUAGES})
+        mocks_by_user[tid][lang] = cnt
+
+    for u in users:
+        u["mocks"] = mocks_by_user.get(
+            u["telegram_id"], {lang: 0 for lang in LANGUAGES}
+        )
+    return users
 
 
 init_db()

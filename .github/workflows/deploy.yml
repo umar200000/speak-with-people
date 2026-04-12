@@ -18,7 +18,7 @@ jobs:
           script: |
             cd /home/speak/app
             git pull origin main
-            ./venv/bin/pip install -q python-telegram-bot fastapi "uvicorn[standard]"
+            ./venv/bin/pip install -q python-telegram-bot fastapi "uvicorn[standard]" python-multipart
             echo '${{ secrets.SERVER_PASSWORD }}' | sudo -S systemctl restart speak-bot
             sleep 2
             systemctl is-active speak-bot

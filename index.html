@@ -440,6 +440,28 @@
 
         /* ===== PREMIUM TAB ===== */
         .premium-wrap { max-width: 500px; margin: 0 auto; padding: 4px 0 20px; }
+        .balance-card {
+            background: white; border-radius: 16px; padding: 18px 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06);
+            margin-bottom: 16px;
+            display: flex; align-items: center; gap: 14px;
+            animation: slideUp .4s ease both;
+            border: 2px solid transparent;
+        }
+        .balance-card.has { border-color: #34c759; background: linear-gradient(135deg, #f0fff4, #ffffff); }
+        .balance-icon-wrap {
+            width: 48px; height: 48px; border-radius: 14px; flex-shrink: 0;
+            background: #f2f2f7; display: flex; align-items: center; justify-content: center;
+            font-size: 24px;
+        }
+        .balance-card.has .balance-icon-wrap { background: linear-gradient(135deg, #34c759, #30b050); color: white; box-shadow: 0 3px 10px rgba(52,199,89,0.3); }
+        .balance-text { flex: 1; min-width: 0; }
+        .balance-label { font-size: 12px; color: #8e8e93; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .balance-value { font-size: 20px; font-weight: 800; color: #1c1c1e; margin-top: 2px; }
+        .balance-card.has .balance-value { color: #1f9a43; }
+        .balance-value .num { font-size: 26px; margin-right: 4px; }
+        .balance-loading { font-size: 14px; color: #8e8e93; }
+
         .premium-hero {
             background: linear-gradient(135deg, #007aff, #5856d6);
             border-radius: 18px; padding: 22px 20px; color: white;
@@ -526,18 +548,29 @@
             padding: 0 6px; margin: 14px 0 8px;
         }
         .pay-info-card {
-            background: white; border-radius: 14px; padding: 16px 18px;
+            background: white; border-radius: 14px; padding: 14px 14px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06);
             display: flex; align-items: center; justify-content: space-between;
-            gap: 12px; animation: slideUp .4s ease .05s both;
+            gap: 10px; animation: slideUp .4s ease .05s both;
         }
-        .pay-info-value { font-size: 17px; font-weight: 600; color: #1c1c1e; flex: 1; word-break: break-all; letter-spacing: 0.5px; }
-        .pay-info-value.mono { font-family: 'SF Mono', 'Menlo', monospace; letter-spacing: 1.5px; font-size: 16px; }
+        .pay-info-value { font-size: 16px; font-weight: 600; color: #1c1c1e; flex: 1 1 auto; min-width: 0; letter-spacing: 0.3px; overflow: hidden; text-overflow: ellipsis; }
+        .pay-info-value.mono {
+            font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+            letter-spacing: 0.6px; font-size: 15px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        @media (min-width: 360px) {
+            .pay-info-value.mono { font-size: 16px; letter-spacing: 1px; }
+        }
+        @media (min-width: 420px) {
+            .pay-info-value.mono { font-size: 17px; letter-spacing: 1.4px; }
+        }
         .pay-copy-btn {
             background: #f2f2f7; border: none; border-radius: 10px;
-            padding: 8px 14px; font-size: 13px; font-weight: 600; color: #007aff;
+            padding: 8px 12px; font-size: 12px; font-weight: 600; color: #007aff;
             cursor: pointer; flex-shrink: 0; -webkit-tap-highlight-color: transparent;
-            display: flex; align-items: center; gap: 6px;
+            display: inline-flex; align-items: center; gap: 5px;
+            white-space: nowrap;
         }
         .pay-copy-btn:active { opacity: 0.7; }
         .theme-arabic .pay-copy-btn { color: #34c759; }
@@ -1472,8 +1505,11 @@
         // ===== PREMIUM / TARIFFS / PAYMENT =====
         var premiumLabels = {
             arabic: {
-                heroTitle: 'استخدام التطبيق',
+                heroTitle: 'خطط الاختبارات',
                 heroSub: 'اشترِ اختبارات تجريبية — ادفع واحصل على الوصول الفوري',
+                balanceTitle: 'رصيدك',
+                balanceHas: 'لديك {n} اختبار',
+                balanceZero: 'لا توجد اختبارات حالياً',
                 listTitle: 'اختر خطة',
                 listSub: 'اختر عدد الاختبارات المناسب لك',
                 payTitle: 'معلومات الدفع',
@@ -1492,8 +1528,11 @@
                 badgeMock: 'اختبار'
             },
             turkish: {
-                heroTitle: 'Uygulamayı kullan',
+                heroTitle: 'Mock tarifeleri',
                 heroSub: 'Mock sınavları satın al — ödeme yap ve anında eriş',
+                balanceTitle: 'Bakiye',
+                balanceHas: '{n} adet mockunuz var',
+                balanceZero: 'Henüz mockunuz yok',
                 listTitle: 'Tarifeyi seç',
                 listSub: 'Size uygun mock sayısını seçin',
                 payTitle: 'Ödeme bilgileri',
@@ -1512,8 +1551,11 @@
                 badgeMock: 'mock'
             },
             english: {
-                heroTitle: 'Use this mini app',
+                heroTitle: 'Mock plans',
                 heroSub: 'Buy mock exams — pay and get instant access',
+                balanceTitle: 'Your balance',
+                balanceHas: 'You have {n} mocks',
+                balanceZero: 'You have no mocks yet',
                 listTitle: 'Choose a plan',
                 listSub: 'Pick the number of mocks that suits you',
                 payTitle: 'Payment details',
@@ -1556,6 +1598,15 @@
         function buildPremiumContent(lang) {
             var pl = premiumLabels[lang] || premiumLabels.english;
             var h = '<div class="premium-wrap">';
+            // Balance card (yuklanayotgan payt default)
+            h += '<div class="balance-card" id="balanceCard">';
+            h += '<div class="balance-icon-wrap">🎫</div>';
+            h += '<div class="balance-text">';
+            h += '<div class="balance-label">' + pl.balanceTitle + '</div>';
+            h += '<div class="balance-value balance-loading" id="balanceValue">...</div>';
+            h += '</div>';
+            h += '</div>';
+            // Hero card (Mock tarifi)
             h += '<div class="premium-hero" onclick="openTariffsPage()">';
             h += '<div class="premium-hero-icon">⭐</div>';
             h += '<div class="premium-hero-text">';
@@ -1565,7 +1616,43 @@
             h += '<div class="premium-hero-arrow">›</div>';
             h += '</div>';
             h += '</div>';
+
+            // Balansni yuklash (async)
+            loadMockBalance(lang);
             return h;
+        }
+
+        function loadMockBalance(lang) {
+            var userId = tgUser ? tgUser.id : 0;
+            var pl = premiumLabels[lang] || premiumLabels.english;
+            if (!userId) {
+                renderBalance(0, pl);
+                return;
+            }
+            fetch('/api/mocks/' + userId)
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    var count = (data && data.mocks && typeof data.mocks[lang] === 'number') ? data.mocks[lang] : 0;
+                    renderBalance(count, pl);
+                })
+                .catch(function() {
+                    renderBalance(0, pl);
+                });
+        }
+
+        function renderBalance(count, pl) {
+            var card = document.getElementById('balanceCard');
+            var val = document.getElementById('balanceValue');
+            if (!card || !val) return;
+            val.classList.remove('balance-loading');
+            if (count > 0) {
+                card.classList.add('has');
+                var text = pl.balanceHas.replace('{n}', '<span class="num">' + count + '</span>');
+                val.innerHTML = text;
+            } else {
+                card.classList.remove('has');
+                val.textContent = pl.balanceZero;
+            }
         }
 
         function openTariffsPage() {
