@@ -437,6 +437,149 @@
         @keyframes waveAnim {
             0%,100%{transform:scaleY(0.5)} 50%{transform:scaleY(1.3)}
         }
+
+        /* ===== PREMIUM TAB ===== */
+        .premium-wrap { max-width: 500px; margin: 0 auto; padding: 4px 0 20px; }
+        .premium-hero {
+            background: linear-gradient(135deg, #007aff, #5856d6);
+            border-radius: 18px; padding: 22px 20px; color: white;
+            display: flex; align-items: center; gap: 16px;
+            box-shadow: 0 8px 24px rgba(0,122,255,0.25);
+            cursor: pointer; -webkit-tap-highlight-color: transparent;
+            transition: transform 0.15s ease;
+            animation: slideUp .4s ease both;
+        }
+        .premium-hero:active { transform: scale(0.98); }
+        .theme-arabic .premium-hero { background: linear-gradient(135deg, #34c759, #30b050); box-shadow: 0 8px 24px rgba(52,199,89,0.25); }
+        .theme-turkish .premium-hero { background: linear-gradient(135deg, #ff3b30, #e8352b); box-shadow: 0 8px 24px rgba(255,59,48,0.25); }
+        .premium-hero-icon {
+            width: 54px; height: 54px; border-radius: 14px; background: rgba(255,255,255,0.2);
+            display: flex; align-items: center; justify-content: center; font-size: 30px; flex-shrink: 0;
+        }
+        .premium-hero-text { flex: 1; }
+        .premium-hero-title { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+        .premium-hero-sub { font-size: 13px; opacity: 0.9; line-height: 1.4; }
+        .premium-hero-arrow { font-size: 22px; opacity: 0.8; }
+
+        /* ===== TARIFFS LIST PAGE ===== */
+        .tariffs-list { display: flex; flex-direction: column; gap: 14px; max-width: 500px; margin: 0 auto; }
+        .tariff-card {
+            background: white; border-radius: 16px; padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06);
+            cursor: pointer; -webkit-tap-highlight-color: transparent;
+            border: 2px solid transparent;
+            transition: all 0.2s ease;
+            position: relative; overflow: hidden;
+        }
+        .tariff-card:active { transform: scale(0.98); }
+        .tariff-card.popular { border-color: #ffcc00; }
+        .tariff-card.popular::after {
+            content: 'POPULAR'; position: absolute; top: 12px; right: -32px;
+            background: #ffcc00; color: #1c1c1e; font-size: 10px; font-weight: 800;
+            padding: 3px 36px; transform: rotate(45deg); letter-spacing: 0.5px;
+        }
+        .tariff-card-header { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+        .tariff-card-icon {
+            width: 48px; height: 48px; border-radius: 12px;
+            background: linear-gradient(135deg, #007aff, #5856d6);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px; color: white; flex-shrink: 0;
+        }
+        .theme-arabic .tariff-card-icon { background: linear-gradient(135deg, #34c759, #30b050); }
+        .theme-turkish .tariff-card-icon { background: linear-gradient(135deg, #ff3b30, #e8352b); }
+        .tariff-card-title { font-size: 18px; font-weight: 700; color: #1c1c1e; }
+        .tariff-card-subtitle { font-size: 13px; color: #8e8e93; margin-top: 2px; }
+        .tariff-card-price-row { display: flex; align-items: baseline; gap: 8px; margin-top: 6px; }
+        .tariff-card-price { font-size: 24px; font-weight: 800; color: #007aff; }
+        .theme-arabic .tariff-card-price { color: #34c759; }
+        .theme-turkish .tariff-card-price { color: #ff3b30; }
+        .tariff-card-price-unit { font-size: 14px; color: #8e8e93; font-weight: 600; }
+        .tariff-card-desc { font-size: 13px; color: #8e8e93; line-height: 1.4; margin-top: 8px; }
+        .tariff-buy-btn {
+            width: 100%; padding: 12px; border: none; border-radius: 12px;
+            background: #007aff; color: white; font-size: 15px; font-weight: 600;
+            margin-top: 14px; cursor: pointer; -webkit-tap-highlight-color: transparent;
+        }
+        .theme-arabic .tariff-buy-btn { background: #34c759; }
+        .theme-turkish .tariff-buy-btn { background: #ff3b30; }
+        .tariff-empty { text-align: center; color: #8e8e93; padding: 60px 20px; font-size: 15px; }
+
+        /* ===== PAYMENT PAGE ===== */
+        .pay-wrap { max-width: 500px; margin: 0 auto; padding-bottom: 24px; }
+        .pay-title-card {
+            background: linear-gradient(135deg, #007aff, #5856d6);
+            border-radius: 16px; padding: 18px 20px; color: white;
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 16px; box-shadow: 0 4px 16px rgba(0,122,255,0.2);
+            animation: slideUp .4s ease both;
+        }
+        .theme-arabic .pay-title-card { background: linear-gradient(135deg, #34c759, #30b050); box-shadow: 0 4px 16px rgba(52,199,89,0.2); }
+        .theme-turkish .pay-title-card { background: linear-gradient(135deg, #ff3b30, #e8352b); box-shadow: 0 4px 16px rgba(255,59,48,0.2); }
+        .pay-title-left { display: flex; flex-direction: column; gap: 2px; }
+        .pay-title-label { font-size: 12px; opacity: 0.85; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+        .pay-title-name { font-size: 18px; font-weight: 700; }
+        .pay-title-mock { background: rgba(255,255,255,0.2); border-radius: 10px; padding: 6px 12px; font-size: 13px; font-weight: 700; }
+
+        .pay-info-label {
+            font-size: 12px; color: #8e8e93; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.5px;
+            padding: 0 6px; margin: 14px 0 8px;
+        }
+        .pay-info-card {
+            background: white; border-radius: 14px; padding: 16px 18px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06);
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 12px; animation: slideUp .4s ease .05s both;
+        }
+        .pay-info-value { font-size: 17px; font-weight: 600; color: #1c1c1e; flex: 1; word-break: break-all; letter-spacing: 0.5px; }
+        .pay-info-value.mono { font-family: 'SF Mono', 'Menlo', monospace; letter-spacing: 1.5px; font-size: 16px; }
+        .pay-copy-btn {
+            background: #f2f2f7; border: none; border-radius: 10px;
+            padding: 8px 14px; font-size: 13px; font-weight: 600; color: #007aff;
+            cursor: pointer; flex-shrink: 0; -webkit-tap-highlight-color: transparent;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .pay-copy-btn:active { opacity: 0.7; }
+        .theme-arabic .pay-copy-btn { color: #34c759; }
+        .theme-turkish .pay-copy-btn { color: #ff3b30; }
+        .pay-copy-btn.copied { background: #e0fce8; color: #1f9a43; }
+
+        .pay-amount-card {
+            background: #f9f9fc; border-radius: 14px; padding: 16px 18px;
+            animation: slideUp .4s ease .15s both;
+        }
+        .pay-amount-value { font-size: 22px; font-weight: 800; color: #007aff; }
+        .theme-arabic .pay-amount-value { color: #34c759; }
+        .theme-turkish .pay-amount-value { color: #ff3b30; }
+
+        .pay-send-btn {
+            width: 100%; padding: 16px; margin-top: 22px;
+            border: none; border-radius: 14px; font-size: 16px; font-weight: 700;
+            background: #007aff; color: white; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            box-shadow: 0 4px 14px rgba(0,122,255,0.3);
+            -webkit-tap-highlight-color: transparent;
+            animation: slideUp .4s ease .2s both;
+        }
+        .pay-send-btn:active { transform: scale(0.98); opacity: 0.9; }
+        .theme-arabic .pay-send-btn { background: #34c759; box-shadow: 0 4px 14px rgba(52,199,89,0.3); }
+        .theme-turkish .pay-send-btn { background: #ff3b30; box-shadow: 0 4px 14px rgba(255,59,48,0.3); }
+        .pay-send-btn svg { width: 18px; height: 18px; }
+
+        .pay-note {
+            font-size: 12px; color: #8e8e93; text-align: center; line-height: 1.5;
+            padding: 14px 16px; margin-top: 14px;
+            animation: slideUp .4s ease .25s both;
+        }
+
+        .pay-toast {
+            position: fixed; left: 50%; top: 24px; transform: translate(-50%, -60px);
+            background: #1c1c1e; color: white; padding: 10px 20px; border-radius: 24px;
+            font-size: 13px; font-weight: 600; z-index: 200;
+            transition: transform 0.3s ease, opacity 0.3s ease; opacity: 0;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+        }
+        .pay-toast.show { transform: translate(-50%, 0); opacity: 1; }
     </style>
 </head>
 <body>
@@ -519,6 +662,9 @@
     <div class="page" id="progressPage"><div id="progressContent"></div></div>
     <div class="page" id="searchPage"><div id="searchContent"></div></div>
     <div class="page" id="callPage"><div id="callContent"></div></div>
+    <div class="page" id="tariffsPage"><div id="tariffsContent"></div></div>
+    <div class="page" id="paymentPage"><div id="paymentContent"></div></div>
+    <div class="pay-toast" id="payToast">Nusxa olindi</div>
 
     <script>
         var tg = window.Telegram.WebApp;
@@ -1323,6 +1469,293 @@
             navigate('callPage', 'progressPage', false);
         }
 
+        // ===== PREMIUM / TARIFFS / PAYMENT =====
+        var premiumLabels = {
+            arabic: {
+                heroTitle: 'استخدام التطبيق',
+                heroSub: 'اشترِ اختبارات تجريبية — ادفع واحصل على الوصول الفوري',
+                listTitle: 'اختر خطة',
+                listSub: 'اختر عدد الاختبارات المناسب لك',
+                payTitle: 'معلومات الدفع',
+                basicLabel: 'الخطة',
+                cardNumLabel: 'رقم البطاقة',
+                cardOwnerLabel: 'صاحب البطاقة',
+                amountLabel: 'مبلغ الدفع',
+                copyBtn: 'نسخ',
+                copied: '✓ تم النسخ',
+                copyToast: 'تم نسخ الرقم',
+                sendBtn: 'إرسال لقطة الشاشة',
+                note: 'بعد الدفع أرسل لقطة شاشة الإيصال عبر زر "إرسال لقطة الشاشة" — سيتم تفعيل الخطة خلال 24 ساعة.',
+                empty: 'لا توجد خطط متاحة حالياً',
+                mockUnit: 'اختبار',
+                sum: 'سوم',
+                badgeMock: 'اختبار'
+            },
+            turkish: {
+                heroTitle: 'Uygulamayı kullan',
+                heroSub: 'Mock sınavları satın al — ödeme yap ve anında eriş',
+                listTitle: 'Tarifeyi seç',
+                listSub: 'Size uygun mock sayısını seçin',
+                payTitle: 'Ödeme bilgileri',
+                basicLabel: 'Tarife',
+                cardNumLabel: 'Kart numarası',
+                cardOwnerLabel: 'Kart sahibi',
+                amountLabel: 'Ödeme tutarı',
+                copyBtn: 'Kopyala',
+                copied: '✓ Kopyalandı',
+                copyToast: 'Kart numarası kopyalandı',
+                sendBtn: 'Ekran görüntüsünü gönder',
+                note: 'Ödemeden sonra fişin ekran görüntüsünü "Ekran görüntüsünü gönder" düğmesiyle iletin — 24 saat içinde aktif edilecektir.',
+                empty: 'Şu anda tarife bulunmuyor',
+                mockUnit: 'mock',
+                sum: 'so\'m',
+                badgeMock: 'mock'
+            },
+            english: {
+                heroTitle: 'Use this mini app',
+                heroSub: 'Buy mock exams — pay and get instant access',
+                listTitle: 'Choose a plan',
+                listSub: 'Pick the number of mocks that suits you',
+                payTitle: 'Payment details',
+                basicLabel: 'Plan',
+                cardNumLabel: 'Card number',
+                cardOwnerLabel: 'Card holder',
+                amountLabel: 'Payment amount',
+                copyBtn: 'Copy',
+                copied: '✓ Copied',
+                copyToast: 'Card number copied',
+                sendBtn: 'Send screenshot',
+                note: 'After paying, send the receipt screenshot via "Send screenshot" — activation within 24 hours.',
+                empty: 'No plans available right now',
+                mockUnit: 'mock',
+                sum: 'UZS',
+                badgeMock: 'mock'
+            }
+        };
+
+        // Uzbek as fallback for all language contexts when we show payment page labels in Uzbek
+        // (user requested Uzbek text on payment UI — we keep original strings simple)
+
+        var paymentInfo = {
+            cardNumber: '5614 6821 1984 6402',
+            cardOwner: 'Ruziev Umarjon',
+            supportUser: 'umar9334'
+        };
+
+        var loadedTariffs = [];
+        var selectedTariff = null;
+
+        function formatSom(price) {
+            var s = String(price || 0);
+            var parts = [];
+            while (s.length > 3) { parts.unshift(s.slice(-3)); s = s.slice(0, -3); }
+            parts.unshift(s);
+            return parts.join(' ');
+        }
+
+        function buildPremiumContent(lang) {
+            var pl = premiumLabels[lang] || premiumLabels.english;
+            var h = '<div class="premium-wrap">';
+            h += '<div class="premium-hero" onclick="openTariffsPage()">';
+            h += '<div class="premium-hero-icon">⭐</div>';
+            h += '<div class="premium-hero-text">';
+            h += '<div class="premium-hero-title">' + pl.heroTitle + '</div>';
+            h += '<div class="premium-hero-sub">' + pl.heroSub + '</div>';
+            h += '</div>';
+            h += '<div class="premium-hero-arrow">›</div>';
+            h += '</div>';
+            h += '</div>';
+            return h;
+        }
+
+        function openTariffsPage() {
+            var lang = currentLang || 'english';
+            var pl = premiumLabels[lang] || premiumLabels.english;
+            var data = langs[lang];
+
+            // Skeleton avval
+            var h = '<div class="' + data.theme + '">';
+            h += '<div class="nav-header"><button class="back-btn" onclick="backFromTariffs()">' + backSvg + '</button>';
+            h += '<div class="nav-title">' + pl.listTitle + '</div></div>';
+            h += '<div class="level-subtitle">' + pl.listSub + '</div>';
+            h += '<div class="tariffs-list" id="tariffsList">';
+            h += '<div class="tariff-empty">⏳</div>';
+            h += '</div></div>';
+            document.getElementById('tariffsContent').innerHTML = h;
+            navigate('progressPage', 'tariffsPage', true);
+
+            // Yuklash
+            fetch('/api/tariffs')
+                .then(function(r) { return r.json(); })
+                .then(function(res) {
+                    loadedTariffs = (res && res.tariffs) ? res.tariffs : [];
+                    renderTariffsList(lang);
+                })
+                .catch(function() {
+                    loadedTariffs = [];
+                    renderTariffsList(lang);
+                });
+        }
+
+        function renderTariffsList(lang) {
+            var pl = premiumLabels[lang] || premiumLabels.english;
+            var listEl = document.getElementById('tariffsList');
+            if (!listEl) return;
+            if (!loadedTariffs.length) {
+                listEl.innerHTML = '<div class="tariff-empty">' + pl.empty + '</div>';
+                return;
+            }
+            var h = '';
+            for (var i = 0; i < loadedTariffs.length; i++) {
+                var t = loadedTariffs[i];
+                var popular = (t.mock_count >= 3) ? ' popular' : '';
+                h += '<div class="tariff-card' + popular + '" onclick="openPaymentPage(' + t.id + ')" style="animation:slideUp .4s ease ' + (i * 0.08) + 's both">';
+                h += '<div class="tariff-card-header">';
+                h += '<div class="tariff-card-icon">⭐</div>';
+                h += '<div><div class="tariff-card-title">' + escapeHtml(t.title) + '</div>';
+                h += '<div class="tariff-card-subtitle">' + t.mock_count + ' ' + pl.mockUnit + '</div></div>';
+                h += '</div>';
+                h += '<div class="tariff-card-price-row">';
+                h += '<div class="tariff-card-price">' + formatSom(t.price) + '</div>';
+                h += '<div class="tariff-card-price-unit">' + pl.sum + '</div>';
+                h += '</div>';
+                if (t.description) {
+                    h += '<div class="tariff-card-desc">' + escapeHtml(t.description) + '</div>';
+                }
+                h += '</div>';
+            }
+            listEl.innerHTML = h;
+        }
+
+        function escapeHtml(s) {
+            return String(s == null ? '' : s)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
+        function backFromTariffs() {
+            navigate('tariffsPage', 'progressPage', false);
+        }
+
+        function openPaymentPage(tariffId) {
+            var t = null;
+            for (var i = 0; i < loadedTariffs.length; i++) {
+                if (loadedTariffs[i].id === tariffId) { t = loadedTariffs[i]; break; }
+            }
+            if (!t) return;
+            selectedTariff = t;
+
+            var lang = currentLang || 'english';
+            var pl = premiumLabels[lang] || premiumLabels.english;
+            var data = langs[lang];
+
+            var h = '<div class="' + data.theme + '">';
+            h += '<div class="nav-header"><button class="back-btn" onclick="backFromPayment()">' + backSvg + '</button>';
+            h += '<div class="nav-title">' + pl.payTitle + '</div></div>';
+            h += '<div class="pay-wrap">';
+
+            // Title card
+            h += '<div class="pay-title-card">';
+            h += '<div class="pay-title-left">';
+            h += '<div class="pay-title-label">' + pl.basicLabel + '</div>';
+            h += '<div class="pay-title-name">' + escapeHtml(t.title) + '</div>';
+            h += '</div>';
+            h += '<div class="pay-title-mock">' + t.mock_count + ' ' + pl.badgeMock + '</div>';
+            h += '</div>';
+
+            // Card number
+            h += '<div class="pay-info-label">' + pl.cardNumLabel + '</div>';
+            h += '<div class="pay-info-card">';
+            h += '<div class="pay-info-value mono">' + paymentInfo.cardNumber + '</div>';
+            h += '<button class="pay-copy-btn" id="copyBtn" onclick="copyCardNumber()">';
+            h += '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>';
+            h += '<span id="copyBtnText">' + pl.copyBtn + '</span>';
+            h += '</button>';
+            h += '</div>';
+
+            // Card owner
+            h += '<div class="pay-info-label">' + pl.cardOwnerLabel + '</div>';
+            h += '<div class="pay-info-card">';
+            h += '<div class="pay-info-value">' + paymentInfo.cardOwner + '</div>';
+            h += '</div>';
+
+            // Amount
+            h += '<div class="pay-info-label">' + pl.amountLabel + '</div>';
+            h += '<div class="pay-amount-card">';
+            h += '<div class="pay-amount-value">' + formatSom(t.price) + ' ' + pl.sum + '</div>';
+            h += '</div>';
+
+            // Send button
+            h += '<button class="pay-send-btn" onclick="sendScreenshot()">';
+            h += '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>';
+            h += pl.sendBtn;
+            h += '</button>';
+
+            h += '<div class="pay-note">' + pl.note + '</div>';
+
+            h += '</div></div>';
+            document.getElementById('paymentContent').innerHTML = h;
+            navigate('tariffsPage', 'paymentPage', true);
+        }
+
+        function backFromPayment() {
+            navigate('paymentPage', 'tariffsPage', false);
+        }
+
+        function copyCardNumber() {
+            var raw = paymentInfo.cardNumber.replace(/\s+/g, '');
+            var doCopy = function() {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(raw).then(showCopied, fallbackCopy);
+                } else {
+                    fallbackCopy();
+                }
+            };
+            var fallbackCopy = function() {
+                try {
+                    var ta = document.createElement('textarea');
+                    ta.value = raw; ta.style.position = 'fixed'; ta.style.top = '-9999px';
+                    document.body.appendChild(ta); ta.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(ta);
+                    showCopied();
+                } catch(e) { showCopied(); }
+            };
+            var showCopied = function() {
+                var lang = currentLang || 'english';
+                var pl = premiumLabels[lang] || premiumLabels.english;
+                var btn = document.getElementById('copyBtn');
+                var btnText = document.getElementById('copyBtnText');
+                if (btn) btn.classList.add('copied');
+                if (btnText) btnText.textContent = pl.copied;
+                var toast = document.getElementById('payToast');
+                if (toast) {
+                    toast.textContent = pl.copyToast;
+                    toast.classList.add('show');
+                    setTimeout(function() { toast.classList.remove('show'); }, 1800);
+                }
+                setTimeout(function() {
+                    if (btn) btn.classList.remove('copied');
+                    if (btnText) btnText.textContent = pl.copyBtn;
+                }, 2200);
+                if (tg && tg.HapticFeedback && tg.HapticFeedback.notificationOccurred) {
+                    try { tg.HapticFeedback.notificationOccurred('success'); } catch(e) {}
+                }
+            };
+            doCopy();
+        }
+
+        function sendScreenshot() {
+            var url = 'https://t.me/' + paymentInfo.supportUser;
+            if (tg && tg.openTelegramLink) {
+                try { tg.openTelegramLink(url); return; } catch(e) {}
+            }
+            if (tg && tg.openLink) {
+                try { tg.openLink(url); return; } catch(e) {}
+            }
+            window.open(url, '_blank');
+        }
+
         function showMainPage(lang, badge, levelName) {
             var data = langs[lang];
             var labels = navLabels[lang];
@@ -1343,13 +1776,18 @@
             var otherTabs = ['cefr', 'premium', 'leaders', 'profile'];
             for (var t = 0; t < otherTabs.length; t++) {
                 var key = otherTabs[t];
-                var p = placeholders[key];
                 h += '<div class="tab-content" id="tab-' + key + '">';
-                h += '<div class="tab-placeholder">';
-                h += '<div class="tab-placeholder-icon">' + p.icon + '</div>';
-                h += '<div class="tab-placeholder-title">' + p.title + '</div>';
-                h += '<div class="tab-placeholder-text">' + p.text + '</div>';
-                h += '</div></div>';
+                if (key === 'premium') {
+                    h += buildPremiumContent(lang);
+                } else {
+                    var p = placeholders[key];
+                    h += '<div class="tab-placeholder">';
+                    h += '<div class="tab-placeholder-icon">' + p.icon + '</div>';
+                    h += '<div class="tab-placeholder-title">' + p.title + '</div>';
+                    h += '<div class="tab-placeholder-text">' + p.text + '</div>';
+                    h += '</div>';
+                }
+                h += '</div>';
             }
 
             // Bottom nav

@@ -29,6 +29,30 @@ def init_db():
         conn.execute("ALTER TABLE users ADD COLUMN photo_url TEXT")
     except sqlite3.OperationalError:
         pass
+
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS tariffs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            mock_count INTEGER NOT NULL DEFAULT 1,
+            price INTEGER NOT NULL,
+            description TEXT DEFAULT '',
+            is_active INTEGER DEFAULT 1,
+            sort_order INTEGER DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    # Default tariflar (agar bo'sh bo'lsa)
+    cnt = conn.execute("SELECT COUNT(*) FROM tariffs").fetchone()[0]
+    if cnt == 0:
+        conn.execute(
+            "INSERT INTO tariffs (title, mock_count, price, description, is_active, sort_order) VALUES (?, ?, ?, ?, 1, 1)",
+            ("1 ta mock", 1, 39000, "Bitta mock imtihon"),
+        )
+        conn.execute(
+            "INSERT INTO tariffs (title, mock_count, price, description, is_active, sort_order) VALUES (?, ?, ?, ?, 1, 2)",
+            ("3 ta mock", 3, 99000, "Uchta mock imtihon — tejamkor"),
+        )
     conn.commit()
     conn.close()
 
@@ -103,6 +127,57 @@ def get_user_count():
     count = conn.execute("SELECT COUNT(*) FROM users").fetchone()[0]
     conn.close()
     return count
+
+
+# ===== TARIFFS =====
+def get_all_tariffs(active_only=False):
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    if active_only:
+        rows = conn.execute(
+            "SELECT * FROM tariffs WHERE is_active = 1 ORDER BY sort_order, id"
+        ).fetchall()
+    else:
+        rows = conn.execute(
+            "SELECT * FROM tariffs ORDER BY sort_order, id"
+        ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def get_tariff(tariff_id):
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    row = conn.execute("SELECT * FROM tariffs WHERE id = ?", (tariff_id,)).fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+
+def add_tariff(title, mock_count, price, description="", is_active=1, sort_order=0):
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute(
+        "INSERT INTO tariffs (title, mock_count, price, description, is_active, sort_order) VALUES (?, ?, ?, ?, ?, ?)",
+        (title, mock_count, price, description, is_active, sort_order),
+    )
+    conn.commit()
+    conn.close()
+
+
+def update_tariff(tariff_id, title, mock_count, price, description="", is_active=1, sort_order=0):
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute(
+        "UPDATE tariffs SET title=?, mock_count=?, price=?, description=?, is_active=?, sort_order=? WHERE id=?",
+        (title, mock_count, price, description, is_active, sort_order, tariff_id),
+    )
+    conn.commit()
+    conn.close()
+
+
+def delete_tariff(tariff_id):
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute("DELETE FROM tariffs WHERE id = ?", (tariff_id,))
+    conn.commit()
+    conn.close()
 
 
 init_db()

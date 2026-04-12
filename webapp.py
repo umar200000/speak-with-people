@@ -3,7 +3,7 @@ import json
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
-from database import add_user, get_user
+from database import add_user, get_user, get_all_tariffs
 
 webapp = FastAPI()
 
@@ -41,6 +41,11 @@ def check_user(telegram_id: int):
     if user and user.get("gender"):
         return {"registered": True, "gender": user["gender"]}
     return {"registered": False}
+
+
+@webapp.get("/api/tariffs")
+def api_tariffs():
+    return {"tariffs": get_all_tariffs(active_only=True)}
 
 
 @webapp.post("/api/register")
